@@ -1,0 +1,5 @@
+name: JawaPermissions
+eshost: localhost
+esport: 9200
+default_world: world
+debug: false

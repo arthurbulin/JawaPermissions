@@ -1,0 +1,18 @@
+superadmin:
+  immunity: 1
+  inherits: admin
+  permissions:
+    - jawamaster.foxcommands.motd.edit
+    - ctl.darkred
+  prohibitions:
+    - perworldinventory.bypass.*
+    - voxelsniper.*
+    - mv.bypass.gamemode.*
+    - ctl.red
+owner:
+  immunity: 0
+  inherits: superadmin
+  permissions:
+    - ctl.darkpurple
+  prohibitions:
+    - ctl.darkred
