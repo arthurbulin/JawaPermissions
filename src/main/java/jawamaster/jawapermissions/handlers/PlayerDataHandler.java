@@ -1,8 +1,8 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+* To change this license header, choose License Headers in Project Properties.
+* To change this template file, choose Tools | Templates
+* and open the template in the editor.
+*/
 package jawamaster.jawapermissions.handlers;
 
 import java.time.LocalDateTime;
@@ -24,20 +24,24 @@ public class PlayerDataHandler {
     }
     
     /** Creates the player data for commiting to the ElasticSearch index.
-     * 
+     *
      * @param player
-     * @return 
+     * @return
      */
     public Map<String, Object> firstTimePlayer(Player player){
         Map<String, Object> playerData = new HashMap();
-         playerData.put("first-login", LocalDateTime.now());
-         playerData.put("last-login", LocalDateTime.now());
-         playerData.put("last-logout", "unknown");
-         playerData.put("name", player.getName());
-         playerData.put("ip",player.getAddress().getAddress());
-         playerData.put("rank", "guest");
-         playerData.put("banned", false);
+        playerData.put("first-login", LocalDateTime.now());
+        playerData.put("last-login", LocalDateTime.now());
+        playerData.put("last-logout", "none");
+        playerData.put("name", player.getName());
+        playerData.put("ip",player.getAddress().getAddress());
+        playerData.put("rank", "guest"); //TODO pull basic rank from permissions files and immunity levels
+        playerData.put("banned", false);
+        playerData.put("play-time", 0);
         
+        if (JawaPermissions.debug){
+            System.out.print(JawaPermissions.pluginSlug + handlerSlug + "firstTimePlayer data created as follows: " + playerData.toString());
+        }
         
         return playerData;
     }
