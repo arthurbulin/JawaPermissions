@@ -24,6 +24,9 @@ public class JawaPermissibleBase extends PermissibleBase {
     private final Player player;
     private final PermissionsHandler handler;
     
+    //Testing something here
+    private static String rank;
+    
     public JawaPermissibleBase (Player player, JawaPermissions plugin) {
         super(player);
         this.player = player;
@@ -62,7 +65,6 @@ public class JawaPermissibleBase extends PermissibleBase {
         recalculatePermissions();
         return null;
     }
-    
         
     @Override
     public Set<PermissionAttachmentInfo> getEffectivePermissions() {
@@ -99,4 +101,5 @@ public class JawaPermissibleBase extends PermissibleBase {
     public void setOp(boolean value) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+
 }
