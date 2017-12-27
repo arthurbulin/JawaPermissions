@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jawamaster.jawapermissions.JawaPermissions;
+import org.bukkit.Bukkit;
 import org.bukkit.command.BlockCommandSender;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
@@ -31,6 +32,7 @@ import org.yaml.snakeyaml.Yaml;
 public class PermissionsHandler {
     private final JawaPermissions plugin;
     private final boolean loaded = false;
+    private final String handlerSlug = "[PermissionsHandler] ";
     
     /** PermissionHandler(JawaPermissions plugin) initializes the permissions handler. This handler will handle loading, reloading, removing, and
      * permission checks for the plugin.
@@ -45,11 +47,14 @@ public class PermissionsHandler {
      * @throws java.io.FileNotFoundException
      * @throws org.json.simple.parser.ParseException **/
     public void reload() throws FileNotFoundException, ParseException{
-        System.out.println(JawaPermissions.getPlugin().getDataFolder());
+        //TODO recache all online player's ranks
         final File permFiles =  new File(JawaPermissions.getPlugin().getDataFolder() + "/permissions");
-        System.out.println(permFiles.toString());
         permFiles.mkdirs();
         File[] fileList = permFiles.listFiles();
+        
+        if (JawaPermissions.debug){
+            System.out.print(JawaPermissions.pluginSlug + handlerSlug + "Permissions are being checked in: " + permFiles);
+        }
         
         for(File f: fileList){ //Iterate over fileList
             Yaml yaml = new Yaml(); //Create Yaml object for permission retreival
@@ -59,13 +64,19 @@ public class PermissionsHandler {
                 currentWorld = currentWorld.substring(0, currentWorld.indexOf('.'));
             }
             
+            if (JawaPermissions.debug){
+                System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Loading permissions from file: " + f.getName());
+                System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Current world name identified as: " + currentWorld);
+            }
+            
             try { //Read in the permissions files one at a time
                 BufferedReader reader = new BufferedReader(new FileReader(f));
                 JSONParser parser = new JSONParser();
                 
-                Object objPerms = yaml.load(reader);
-                String stringPerms = JSONValue.toJSONString(objPerms);
-                JSONObject jsonPerms = (JSONObject) parser.parse(stringPerms);
+                // TODO using * in the permissions file by itself to give all permissions generates an error. Find a way around that.
+                Object objPerms = yaml.load(reader); //Read the yaml file into an object
+                String stringPerms = JSONValue.toJSONString(objPerms); //Convert object containing yaml data into a JSONString
+                JSONObject jsonPerms = (JSONObject) parser.parse(stringPerms); //Convert the JSONString into a JSONObject for later use
                 
                 JawaPermissions.worldPermissions.put(currentWorld, jsonPerms);
                 
@@ -111,32 +122,57 @@ public class PermissionsHandler {
      * @param perm
      * @return */
     public boolean has(Player player, String perm) {
-        String rank = getGroup(player);
         String currentWorld = player.getWorld().getName();
+        String rank = JawaPermissions.playerRank.get(player.getUniqueId());
         
         JSONObject rankData = (JSONObject) JawaPermissions.worldPermissions.get(currentWorld).get(rank);
         
         JSONArray permissions = (JSONArray) rankData.get("permissions");
         JSONArray prohibitions = (JSONArray) rankData.get("prohibitions");
-        
+
         if (JawaPermissions.debug){
-            System.out.println(perm);
-            System.out.println(permissions);
-            System.out.println(permissions.contains(perm));
-            System.out.println(prohibitions.contains(perm));
+            System.out.println(JawaPermissions.pluginSlug + handlerSlug + "has call for " + player.getName() + " for permission: " + perm);
+            System.out.println(JawaPermissions.pluginSlug + handlerSlug + player.getName() + " has group permissions: " + permissions);
+            System.out.println(JawaPermissions.pluginSlug + handlerSlug + player.getName() + " has group prohibitions: " + prohibitions);
+            System.out.println(JawaPermissions.pluginSlug + handlerSlug + player.getName() + " has permission in group perms: " + permissions.contains(perm));
+            System.out.println(JawaPermissions.pluginSlug + handlerSlug + player.getName() + " has prohibitions in group prohibs: " + prohibitions.contains(perm));
         }
         
-        if (permissions.contains(perm) && !prohibitions.contains(perm)) return true;
-        else return false;
+        if (permissions.contains(perm) && !prohibitions.contains(perm)) {
+            if (JawaPermissions.debug){
+                System.out.println(JawaPermissions.pluginSlug + handlerSlug + player.getName() + " has permission and does not have a prohibition.");
+            }
+            return true;
+        }
         
-        
+        else {
+            if (JawaPermissions.debug){
+                System.out.println(JawaPermissions.pluginSlug + handlerSlug + player.getName() + " does not have permission or has a prohibition.");
+            }
+            return false;
+        }
+
+
     }
     
+    //TODO Create rank set
+    public boolean setRank(Player player, String rank){
+        
+        return true;
+    }
     
     public String getGroup(Player player){
         Map<String, Object> playerData = ESHandler.getPlayerData(player.getUniqueId());
         
-        return (String) playerData.get("rank");
+        if (playerData == null){
+            return null;
+        }
+        
+        String rank = (String) playerData.get("rank");
+        if (JawaPermissions.debug){
+            System.out.println(JawaPermissions.pluginSlug + handlerSlug + player.getName() + " has rank: " + rank);
+        }
+        return rank;
     }
     
 }
