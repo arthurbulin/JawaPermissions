@@ -1,0 +1,16 @@
+ChangeLog:
+    0.5.4a:
+        new:
+          - Ranks are now treated as java objects that contain all rank permissions/prohibitions per every existing world and are used to evaluate within rank object
+          - Increased performance; hasPermission checks no longer iterate and will add long perms to the list internally when wildcards are specified
+        todos:
+          - cleanup old variables and methods
+          - comments in code are gross right now
+          - JavaDoc is also pretty bad
+        known_bugs:
+          - immunity won't work as is. New rank object system hasn't been wired for it yet
+          - perm reload won't work yet. it will be redone so that objects are reused and not discarded to save on GC.
+    0.3.1a:
+        - Permissions adjusted to use bukkit's internal configuration loading to parse yml instead
+    0.2.5a:
+        - Initial Operational version.
