@@ -1,8 +1,25 @@
 name: JawaPermissions
 main: jawamaster.jawapermissions.JawaPermissions
-version: 0.1
+version: 0.5.4a
 commands:
   uuid:
     description: This command returns the UUID of a user.
     usage: /uuid
     permission: jawapermissions.getuuid
+  setrank:
+    description: This command will set the player rank.
+    usage: /setrank <user> <rank>
+    permission: jawapermissions.setrank
+  ban:
+    description: Will ban a player
+    usage: /ban <user> <reason> [time]
+    permission: jawapermissions.ban
+  unban:
+    description: Will unban a player.
+    usage: /unban <user>
+    permission: jawapermissions.unban
+  testcommand:
+    permission: jawapermissions.testcommand
+  reloadperms:
+    description: Reloads the permissions from disk and recaches them.
+    permission: jawapermissions.reload
