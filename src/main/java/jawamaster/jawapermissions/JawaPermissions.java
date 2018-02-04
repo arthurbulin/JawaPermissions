@@ -8,21 +8,28 @@ package jawamaster.jawapermissions;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import jawamaster.jawapermissions.commands.banPlayer;
 import jawamaster.jawapermissions.commands.getUUID;
+import jawamaster.jawapermissions.commands.reloadPermissions;
+import jawamaster.jawapermissions.commands.setRank;
+import jawamaster.jawapermissions.commands.testCommand;
+import jawamaster.jawapermissions.commands.unbanPlayer;
 import jawamaster.jawapermissions.handlers.ESHandler;
 import jawamaster.jawapermissions.handlers.PermissionsHandler;
 import jawamaster.jawapermissions.handlers.PlayerDataHandler;
 import jawamaster.jawapermissions.listeners.PlayerJoin;
 import jawamaster.jawapermissions.listeners.PlayerQuit;
+import jawamaster.jawapermissions.Rank;
 import org.apache.http.HttpHost;
-import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
-import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.configuration.Configuration;
+import org.bukkit.event.Event;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
@@ -41,19 +48,26 @@ public class JawaPermissions extends JavaPlugin {
     public static RestHighLevelClient restClient;
     public static ESHandler eshandler;
     public static PlayerDataHandler playerDataHandler;
+    public static Event rankChangeEvent;
     
     //TODO consider switching from JSONObject to SourceMap.
     //Declare HashMap Storage for the loaded Permissions
-    public static HashMap<String,JSONObject> worldPermissions;
+    public static HashMap<String, Object> worldPermissions;
     public static HashMap<UUID, String> playerRank;
+    public static HashMap<String, Integer> immunityLevels;
+    public static HashMap<String, String> inheritance;
+    public static HashMap<String, UUID> bannedPlayers;
+    
+    //New rank object method
+    public static Map<String, Rank> rankMap;
     
     //Declare configuration variables
     public static Configuration config;
-    public static String eshost, newPlayerMessage;
+    public static String eshost, newPlayerMessage, defaultWorld, serverName;
     public static int esport;
     public static boolean debug;
-    private static CredentialsProvider credentialsProvider;
-    private static String esUser, esPass;
+//    private static CredentialsProvider credentialsProvider;
+//    private static String esUser, esPass;
     
     public final static String pluginSlug = "[JawaPermissions] ";
     
@@ -79,13 +93,24 @@ public class JawaPermissions extends JavaPlugin {
         //Initialize the permission storage HashMap
         worldPermissions = new HashMap();
         playerRank = new HashMap(); 
+        immunityLevels = new HashMap();
+        bannedPlayers = new HashMap();
+        
+        //New method
+        rankMap = new HashMap();
+        
+        ESHandler.loadBannedPlayers();
         
         //Load permissions. Try-catch to deal with possible exceptions.
         try {
             handler.load();
         } catch (FileNotFoundException | ParseException ex) {
             Logger.getLogger(JawaPermissions.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(JawaPermissions.class.getName()).log(Level.SEVERE, null, ex);
         }
+        
+        //Register player events
         
         //Register Event Listeners
         getServer().getPluginManager().registerEvents(new PlayerJoin(), this);
@@ -93,8 +118,11 @@ public class JawaPermissions extends JavaPlugin {
         
         //Register Commands
         this.getCommand("uuid").setExecutor(new getUUID());
-        
-       // getServerData();
+        this.getCommand("setrank").setExecutor(new setRank());
+        this.getCommand("ban").setExecutor(new banPlayer());
+        this.getCommand("testcommand").setExecutor(new testCommand());
+        this.getCommand("unban").setExecutor(new unbanPlayer());
+        this.getCommand("reloadperms").setExecutor(new reloadPermissions());
     }
     
     @Override
@@ -118,8 +146,10 @@ public class JawaPermissions extends JavaPlugin {
         debug = (Boolean) config.get("debug");
         eshost = (String) config.get("eshost");
         esport = (int) config.get("esport");
-        esUser = config.getString("esuser");
-        esPass = config.getString("espass");
+        serverName = (String) config.get("servername");
+//        esUser = config.getString("esuser");
+//        esPass = config.getString("espass");
+        defaultWorld = config.getString("default-world");
         if (config.isSet("new-player-message")){
             newPlayerMessage = (String) config.get("new-player-message");
         }
@@ -139,22 +169,6 @@ public class JawaPermissions extends JavaPlugin {
      */
     public void startESHandler(){
 
-        
-        //Load the needed credentials
-        //credentialsProvider = new BasicCredentialsProvider();
-       // credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(esUser, esPass));
-
-        //Save authentication for later
-
-        /*
-        restClient = new RestHighLevelClient(RestClient.builder(new HttpHost(eshost, esport, "http")).setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
-            @Override
-            public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
-                return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-            }
-        }));
-        */
-        
         //Initialize the restClient for global use
         restClient = new RestHighLevelClient(RestClient.builder(new HttpHost(eshost, esport, "http")).setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback() {
             @Override
@@ -179,21 +193,6 @@ public class JawaPermissions extends JavaPlugin {
         
         eshandler = new ESHandler(this);
         
-        // TODO Create asyncServer ping to keep the ElasticSearch Connection alive
-        // TODO Create an intial data pull from the server to prevent error on first command run
-    }
-
-    /** This pulls the server's data from the ElasticSearch DB and checks it for changes. If this is the first run then this will get the server data and commit
-     * it to the ElasticSearch DB.
-     */
-    public void getServerData(){
-        Map<String, Object> serverData = ESHandler.getServerData("Test");
-
-        //serverData = ESHandler.getServerData("Test");
-        UUID uuid = UUID.fromString("00000000-0000-0000-0000-000000000000");
-        Map<String, Object> playerData = ESHandler.getPlayerData(uuid);
-        playerData = ESHandler.getPlayerData(uuid);
-        playerData = ESHandler.getPlayerData(uuid);
     }
 
 }

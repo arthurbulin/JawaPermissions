@@ -25,6 +25,5 @@ public class PlayerQuit implements Listener {
         if (JawaPermissions.debug) {
         System.out.println(JawaPermissions.pluginSlug + "[PlayerQuitEvent] "+ player.getName() + " with rank " + removed + ", has been removed from the player cache.");
         }
-        //System.out.println(JawaPermissions.pluginSlug + "[PlayerQuitEvent] " + JawaPermissions.playerRank.keySet());
     }
 }

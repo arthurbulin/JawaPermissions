@@ -1,18 +1,41 @@
+guest:
+  permissions:
+    - bukkit.command.help
+    - jawapermissions.getuuid
+    - jawapermissions.setrank
+builder:
+  permissions:
+    - bukkit.command.help
+superbuilder:
+  permissions:
+    - bukkit.command.help
+architect:
+  permissions:
+    - bukkit.command.help
+trainee:
+  permissions:
+    - jawapermissions.getuuid
+    - bukkit.command.help
+admin:
+  inherits: trainee
+  permissions:
+    - bukkit.command.help
 superadmin:
-  immunity: 1
   inherits: admin
   permissions:
     - jawamaster.foxcommands.motd.edit
     - ctl.darkred
+    - jawapermissions.ban
+    - jawapermissions.testcommand
   prohibitions:
     - perworldinventory.bypass.*
     - voxelsniper.*
     - mv.bypass.gamemode.*
     - ctl.red
 owner:
-  immunity: 0
   inherits: superadmin
   permissions:
+    - jawapermissions.getuuid
     - ctl.darkpurple
   prohibitions:
     - ctl.darkred

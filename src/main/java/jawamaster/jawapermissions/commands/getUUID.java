@@ -5,7 +5,6 @@
 */
 package jawamaster.jawapermissions.commands;
 
-import jawamaster.jawapermissions.JawaPermissions;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -27,6 +26,9 @@ public class getUUID implements CommandExecutor {
      * @return  **/
     @Override
     public boolean onCommand(CommandSender commandSender, Command arg1, String arg2, String[] arg3) {
+//        System.out.println("arg1 " + arg1);
+//        System.out.println("arg2 " + arg2);
+//        for (String i: arg3) System.out.println("arg3 " + i);
         if (commandSender instanceof Player) commandSender.sendMessage(((Player) commandSender).getUniqueId().toString());
         else if (commandSender instanceof ConsoleCommandSender) commandSender.sendMessage("Console does not have a UUID.");        
         return true;

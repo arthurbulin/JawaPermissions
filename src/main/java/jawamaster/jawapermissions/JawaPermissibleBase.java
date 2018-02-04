@@ -73,8 +73,9 @@ public class JawaPermissibleBase extends PermissibleBase {
     
     @Override
     public boolean hasPermission(String arg0) {
-        //return true;
+        //This will give op all permissions
         return handler.has(player, arg0.toLowerCase());
+        //return isOp() || handler.has(player, arg0.toLowerCase());
     }
     
     @Override
@@ -94,12 +95,17 @@ public class JawaPermissibleBase extends PermissibleBase {
 
     @Override
     public boolean isOp() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return hasPermission("bukkit.base.op");
     }
 
     @Override
     public void setOp(boolean value) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        player.setOp(value);
+        recalculatePermissions();
+    }
+    
+    private boolean isBaseOp(){
+        return player.isOp();
     }
 
 }
