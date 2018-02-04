@@ -1,5 +1,6 @@
-name: JawaPermissions
+servername: main
 eshost: localhost
 esport: 9200
-default_world: world
+default-world: world
 debug: false
+new-player-message: "You have been successfully Indexed"
