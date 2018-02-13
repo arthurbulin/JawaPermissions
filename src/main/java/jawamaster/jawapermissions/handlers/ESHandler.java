@@ -207,38 +207,6 @@ public class ESHandler {
                     }
                 }
 
-//        restClient.searchAsync(searchRequest, new ActionListener<SearchResponse>() {
-//            @Override
-//            public void onResponse(SearchResponse searchResponse) {
-//                searchHits = searchResponse.getHits();
-//                SearchHit[] hits = searchHits.getHits();
-//                long totalHits = searchHits.totalHits;
-//                
-//                if (totalHits == 0){ //If not found in Index
-//                    //TODO implement first time player methods
-//                    Map<String, Object> playerData = JawaPermissions.playerDataHandler.firstTimePlayer(player);
-//                    indexPlayerData(player, playerData);
-//                }else { //If player is found in index
-//                    
-//                    Map<String, Object> playerData = hits[0].getSourceAsMap();
-//
-//                    if (!(Boolean) playerData.get("banned")){
-//                        if (JawaPermissions.debug){
-//                            System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Player found in ElasticSearch. Caching player rank.");
-//                        }
-//                        cachePlayerRank(player);
-//                    }
-//                }
-//            }
-            
-//            @Override
-//            public void onFailure(Exception e) {
-//                
-//                System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Please check the ElasticSearch server. Something went wrong with output.");
-//                e.printStackTrace();
-//            }
-//            
-//        });
     return null;
     }
     
