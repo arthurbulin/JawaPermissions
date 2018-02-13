@@ -57,24 +57,52 @@ public class Rank {
     //Get Data methods
     
     public boolean hasPermission(String world, String perm) {
-        if (this.permissions.get(world).contains(perm)) return true;
-        else if (this.permissions.get(world).contains("*") || this.permissions.get(world).contains("*.*")) return true;
+        //System.out.println("Has check. World: " + world + " Perm: "+perm);
+        if (this.permissions.get(world).contains(perm)) return !hasProhibition(world, perm);
+        else if (this.permissions.get(world).contains("*") || this.permissions.get(world).contains("jawapermissions.all")) return !hasProhibition(world, perm);
         else {
+            if ("*".equals(perm)) return false; //Because fucking perworld inventory checks if player has * for some damn reason
+            
             String testPerm = perm.substring(0, perm.lastIndexOf("."))+".*";
             
             if (this.permissions.get(world).contains(testPerm)) {
                 this.permissions.get(world).add(perm); //This will add the truncated wildcard perm to the perm set and speed up checks. Next call will not need to loop
-                return true;
+                return !hasProhibition(world, perm);
             }
             
             for (int i = 0; i < perm.split("\\.").length-2; i++){
                 testPerm = testPerm.substring(0, testPerm.substring(0,testPerm.lastIndexOf(".")).lastIndexOf("."))+".*";
                 if (this.permissions.get(world).contains(testPerm)) {
                     this.permissions.get(world).add(perm); //This will add the truncated wildcard perm to the perm set and speed up checks. Next call will not need to loop
+                    return !hasProhibition(world, perm);
+                }
+            }
+        }
+        return false;
+    }
+    
+    public boolean hasProhibition(String world, String perm){
+        if (this.prohibitions.get(world).contains(perm)) return true;
+        else if (this.prohibitions.get(world).contains("*") || this.prohibitions.get(world).contains("jawapermissions.all")) return true; //This really should never happen but if it does i hope they know what they want
+        else {
+            if ("*".equals(perm)) return true; //Because fucking perworld inventory checks if player has * for some damn reason always return true if they are this stupid
+            
+            String testPerm = perm.substring(0, perm.lastIndexOf("."))+".*";
+            
+            if (this.prohibitions.get(world).contains(testPerm)) {
+                this.prohibitions.get(world).add(perm); //This will add the truncated wildcard perm to the perm set and speed up checks. Next call will not need to loop
+                return true;
+            }
+            
+            for (int i = 0; i < perm.split("\\.").length-2; i++){
+                testPerm = testPerm.substring(0, testPerm.substring(0,testPerm.lastIndexOf(".")).lastIndexOf("."))+".*";
+                if (this.prohibitions.get(world).contains(testPerm)) {
+                    this.prohibitions.get(world).add(perm); //This will add the truncated wildcard perm to the perm set and speed up checks. Next call will not need to loop
                     return true;
                 }
             }
         }
+        
         return false;
     }
     
