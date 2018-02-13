@@ -75,7 +75,7 @@ public class PermissionsHandler {
         
         //Iterate over filelist
         for(File f: fileList){
-//            Yaml yaml = new Yaml(); //Create Yaml object for permission retreival
+            //Yaml yaml = new Yaml(); //Create Yaml object for permission retreival
             FileConfiguration yaml = YamlConfiguration.loadConfiguration(f);
             String currentWorld = f.getName();
             
@@ -86,23 +86,23 @@ public class PermissionsHandler {
             if (JawaPermissions.debug){
                 System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Loading permissions from file: " + f.getName());
                 System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Current world name identified as: " + currentWorld);
-            }        
-                
-            System.out.println(yaml.getKeys(true));
-            System.out.println(yaml.getKeys(false));
+            }
+            
+            //System.out.println(yaml.getKeys(true));
+           // System.out.println(yaml.getKeys(false));
             for (String rank: yaml.getKeys(false)){
                 
                 if (!JawaPermissions.rankMap.containsKey(rank)){
                     //Create a new rank object and commit permissions to it
                     //System.out.println("Getting Immunity level for: " + rank);
-
+                    
                     JawaPermissions.rankMap.put(rank, new Rank(rank, JawaPermissions.immunityLevels.get(rank)));
-                } 
+                }
                 
                 JawaPermissions.rankMap.get(rank).addWorld(currentWorld, yaml.getConfigurationSection(rank).getStringList("permissions"), yaml.getConfigurationSection(rank).getStringList("prohibitions"));
                 
-                String inherits; 
-                if (yaml.getConfigurationSection(rank).contains("inherits")){ //If rank has inheritence 
+                String inherits;
+                if (yaml.getConfigurationSection(rank).contains("inherits")){ //If rank has inheritence
                     
                     inherits = yaml.getConfigurationSection(rank).getString("inherits"); //Get inherited rank
                     
@@ -116,46 +116,10 @@ public class PermissionsHandler {
                         if (yaml.getConfigurationSection(inherits).contains("inherits")) inherits = yaml.getConfigurationSection(inherits).getString("inherits");
                         else break; //end loop and return to rank iteration
                     }
+                }
+                
             }
 
-}
-            
-            
-//            mapPerms.clear(); //clear the mapPerms object for reuse
-//            rankMap.clear();
-//            // TODO register inheritence
-//            for (String rank : yaml.getKeys(false)) { //For each rank entry
-//
-//                //This should generate all inheritence on server/perm load and not at time of permission check like in previous version
-//                if (yaml.getConfigurationSection(rank).contains("inherits")) { //Find all inherited permissions and add them to the permissions map.
-//                    
-//                    //rankMap.put("inherits", yaml.getConfigurationSection(rank).get("inherits"));
-//                    String inherits = yaml.getConfigurationSection(rank).getString("inherits");
-//                    
-//                    while (true) { //Go until we hit a rank without inheritence
-//                        //(List<String>) ((ConfigurationSection)((Map<String, Object>) JawaPermissions.worldPermissions.get(currentWorld)).get(inherits)).get("permissions")
-//                        yaml.getConfigurationSection(inherits).getStringList(rank);
-//                        for (String s: yaml.getConfigurationSection(rank).getStringList("permissions"))
-//                            permissions.add(s);
-//                        
-//                        if (((Map<String, Object>)((Map<String, Object>) JawaPermissions.worldPermissions.get(currentWorld)).get(inherits)).containsKey("inherits")) {
-//                            inherits = (String) ((Map<String, Object>)((Map<String, Object>) JawaPermissions.worldPermissions.get(currentWorld)).get(inherits)).get("inherits");
-//                            //System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Inherits: " + inherits);
-//                        } else break;
-//                    }
-//                }
-//                
-//                if (yaml.getConfigurationSection(rank).contains("permissions")) //Put the permissions from the config file directly into the map
-//                    rankMap.put("permissions", yaml.getConfigurationSection(rank).getStringList("permissions"));
-//                
-//                if (yaml.getConfigurationSection(rank).contains("prohibitions")) //Put the prohibitions from the config file directly into the map
-//                    rankMap.put("prohibitions", yaml.getConfigurationSection(rank).getStringList("prohibitions"));
-//                
-//            }
-                
-                // TODO discard rank data that isnt in the immunity.yml file
-                //JawaPermissions.worldPermissions.put(currentWorld, mapPerms);
-                
         }
     }
     
@@ -243,65 +207,16 @@ public class PermissionsHandler {
      * @param perm
      * @return */
     public boolean has(Player player, String perm) {
+        //System.out.println("Permission handler has; perm: " + perm);
+        if (JawaPermissions.debug){
+            System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Has call line 212 for player: " + player.getName());
+            String playerRank = JawaPermissions.playerRank.get(player.getUniqueId());
+            System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Player has rank: " + playerRank);
+            System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Rank object is: " + JawaPermissions.rankMap.get(playerRank).getRankName());
+            System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Permission being checked is: " + perm);
+            System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Player has permission: " + JawaPermissions.rankMap.get(playerRank).hasPermission(player.getWorld().getName(), perm));
+        }
         return JawaPermissions.rankMap.get(JawaPermissions.playerRank.get(player.getUniqueId())).hasPermission(player.getWorld().getName(), perm);
-//        List<String> prohibitions, permissions;
-//        boolean hasPerms = false, hasProhibs = false;
-//        boolean hasPerm = false, hasProhib = false;
-//
-//        String currentWorld = player.getWorld().getName();
-//        String rank = JawaPermissions.playerRank.get(player.getUniqueId());
-//        ConfigurationSection rankData = (ConfigurationSection) ((Map<String,Object>) JawaPermissions.worldPermissions.get(currentWorld)).get(rank);        
-//        String inherits;
-//
-//        //Get the permissions and check them
-//        permissions = new ArrayList();
-//        if (rankData.contains("permissions")){
-//            permissions = (List<String>) rankData.getStringList("permissions");
-//            hasPerms = true;
-//        }
-//        
-//        //Handles loading the inherit data
-//        inherits = (String) rankData.get("inherits");
-////        System.out.println(JawaPermissions.pluginSlug + handlerSlug + rankData.containsKey("inherits"));
-//        if (rankData.contains("inherits")){
-//            while (true) {
-//                //FIXME Configuration file setup needed
-//                
-//                for (String s: (List<String>) ((ConfigurationSection)((Map<String, Object>) JawaPermissions.worldPermissions.get(currentWorld)).get(inherits)).get("permissions")) permissions.add(s);
-//                
-//                if (((Map<String, Object>)((Map<String, Object>) JawaPermissions.worldPermissions.get(currentWorld)).get(inherits)).containsKey("inherits")) {
-//                    inherits = (String) ((Map<String, Object>)((Map<String, Object>) JawaPermissions.worldPermissions.get(currentWorld)).get(inherits)).get("inherits");
-//                    //System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Inherits: " + inherits);
-//                } else break;
-//            }
-//        }
-//        
-//        hasPerm = permissions.contains(perm);
-//        if (permissions.contains("jawapermissions.all")) hasPerm = true;
-//        
-//        //TODO get individual perms and prohibs from ElasticSearch
-//
-//        if (rankData.contains("prohibtions")){
-//            prohibitions = (List<String>) rankData.get("prohibitions");
-//            hasProhibs = true;
-//            hasProhib = prohibitions.contains(perm);
-//        } else {
-//            prohibitions = new ArrayList();
-//        }
-//        
-//        if (JawaPermissions.debug){
-//            System.out.println(JawaPermissions.pluginSlug + handlerSlug + "has call for " + player.getName() + " for permission: " + perm);
-//            if (hasPerms) System.out.println(JawaPermissions.pluginSlug + handlerSlug + player.getName() + " has permission in group perms: " + permissions.contains(perm));
-//            if (hasProhibs) System.out.println(JawaPermissions.pluginSlug + handlerSlug + player.getName() + " has prohibitions in group prohibs: " + prohibitions.contains(perm));
-//        }
-//        
-//        if (hasPerm && !hasProhib){
-//            return true;
-//        } else if (hasProhib){
-//            return false;
-//        } else {
-//            return false;
-//        }
     }
        
 }
