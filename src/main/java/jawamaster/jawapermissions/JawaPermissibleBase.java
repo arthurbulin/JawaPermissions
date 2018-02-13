@@ -107,5 +107,13 @@ public class JawaPermissibleBase extends PermissibleBase {
     private boolean isBaseOp(){
         return player.isOp();
     }
+    
+    public String getRank(){
+        return rank;
+    }
+    
+    public void setRank(String rank){
+        this.rank = rank;
+    }
 
 }
