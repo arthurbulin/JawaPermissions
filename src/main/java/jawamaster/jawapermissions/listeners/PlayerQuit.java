@@ -24,13 +24,18 @@ public class PlayerQuit implements Listener {
         
         Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(JawaPermissions.plugin, new Runnable() {
             public void run() {
-                String removed = JawaPermissions.playerRank.remove(player.getUniqueId());
-                
-                if (JawaPermissions.debug) {
-                    System.out.println(JawaPermissions.pluginSlug + "[PlayerQuitEvent] "+ player.getName() + " with rank " + removed + ", has been removed from the player cache.");
+                if (Bukkit.getServer().getPlayer(player.getName()) == null){
+                    String removed = JawaPermissions.playerRank.remove(player.getUniqueId());
+                    
+                    if (JawaPermissions.debug) {
+                        System.out.println(JawaPermissions.pluginSlug + "[PlayerQuitEvent] "+ player.getName() + " with rank " + removed + ", has been removed from the player cache.");
+                    }
+                } else {
+                    //Do nothing
                 }
+                
             }
-        }, 600);
+        }, 20); //set to 20 ticks(1s), before this was 600 ticks.
         
     }
 }

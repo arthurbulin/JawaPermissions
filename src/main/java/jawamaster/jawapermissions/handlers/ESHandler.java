@@ -16,6 +16,7 @@ import jawamaster.jawapermissions.JawaPermissions;
 import jawamaster.jawapermissions.events.PlayerRankChange;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Server;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.elasticsearch.ElasticsearchException;
@@ -41,6 +42,8 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
  */
 public class ESHandler {
     public static RestHighLevelClient restClient;
+
+
     
     public JawaPermissions plugin;
     static Map<String, Object> response;
@@ -166,6 +169,10 @@ public class ESHandler {
 
     }
     
+    public static void updatePlayerData(Player player, Map<String,Object> updateData) {
+        UpdateRequest updateRequest = new UpdateRequest("mc", "players", player.getUniqueId().toString()).doc(updateData);
+    }
+    
     
 //*****************Specialized Calls**************
     /** Called on playerJoinEvent. Will search for a player in the index by UUID. If not present will return false.
@@ -183,31 +190,32 @@ public class ESHandler {
         SearchResponse searchResponse = restClient.search(searchRequest);
         
         searchHits = searchResponse.getHits();
-                SearchHit[] hits = searchHits.getHits();
-                long totalHits = searchHits.totalHits;
-                
-                if (totalHits == 0){ //If not found in Index
-                    //TODO implement first time player methods
-                    Map<String, Object> playerData = JawaPermissions.playerDataHandler.firstTimePlayer(player);
-                    indexPlayerData(player, playerData);
-                    
-                    //TODO deal with different IP update and resolve possible ban
-                    //resolveIP();
-                    
-                    return playerData;
-                }else { //If player is found in index
-                    
-                    Map<String, Object> playerData = hits[0].getSourceAsMap();
-
-                    if (!(Boolean) playerData.get("banned")){
-                        if (JawaPermissions.debug){
-                            System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Player found in ElasticSearch. Caching player rank.");
-                        }
-                        cachePlayerRank(player);
-                    }
+        SearchHit[] hits = searchHits.getHits();
+        long totalHits = searchHits.totalHits;
+        
+        if (totalHits == 0){ //If not found in Index
+            //TODO implement first time player methods
+            Map<String, Object> playerData = JawaPermissions.playerDataHandler.firstTimePlayer(player);
+            indexPlayerData(player, playerData);
+            
+            //TODO deal with different IP update and resolve possible ban
+            //resolveIP();
+            
+            return playerData;
+        }else { //If player is found in index
+            
+            Map<String, Object> playerData = hits[0].getSourceAsMap();
+            
+            if (!(Boolean) playerData.get("banned")){
+                if (JawaPermissions.debug){
+                    System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Player found in ElasticSearch. Caching player rank.");
                 }
-
-    return null;
+                
+                cachePlayerRank(player); //TODO get rid of this
+            }
+        }
+        
+        return null;
     }
     
     /** Caches player rank from the elasticsearch index. This should only be called by searchForReturningPlayers or on a permissions reload.
@@ -222,6 +230,8 @@ public class ESHandler {
             public void onResponse(GetResponse getResponse) {
                 response = getResponse.getSourceAsMap();
                 String cacheRank = JawaPermissions.playerRank.put(player.getUniqueId(), (String) response.get("rank"));
+                if (player.hasPermission("jawachat.opchat") || player.isOp()) Bukkit.getServer().getPluginManager().subscribeToPermission(Server.BROADCAST_CHANNEL_ADMINISTRATIVE, player);
+                Bukkit.getServer().getPluginManager().subscribeToPermission(Server.BROADCAST_CHANNEL_USERS, player);
                 //Debug response data
                 if (JawaPermissions.debug){
                     System.out.println(JawaPermissions.pluginSlug + handlerSlug + cacheRank);
@@ -375,5 +385,33 @@ public class ESHandler {
         serverData.put("name", JawaPermissions.serverName);
         serverData.put("last-startup", LocalDateTime.now());
         serverData.put("owner-uuids", ownerUUID);
+    }
+    
+    
+    public static void whoLookUp(CommandSender commandSender, Player target) throws IOException {
+        searchRequest = new SearchRequest("mc");
+        searchSourceBuilder = new SearchSourceBuilder();
+        
+        searchSourceBuilder.query(QueryBuilders.matchQuery("_id", target.getUniqueId().toString()));
+        searchRequest.source(searchSourceBuilder);
+        
+        //System.out.println("test");
+        SearchResponse searchResponse = restClient.search(searchRequest);
+        
+        searchHits = searchResponse.getHits();
+        SearchHit[] hits = searchHits.getHits();
+        //long totalHits = searchHits.totalHits;
+        
+        Map<String, Object> playerData = hits[0].getSourceAsMap();
+        if (commandSender instanceof Player){
+            ((Player) commandSender).sendMessage(ChatColor.DARK_GREEN + "> " + target.getDisplayName() + "'s current player data.");
+            ((Player) commandSender).sendMessage(ChatColor.DARK_GREEN + " > User name: " + ChatColor.WHITE + target.getName() );
+            ((Player) commandSender).sendMessage(ChatColor.DARK_GREEN + " > Rank: " + ChatColor.WHITE + playerData.get("rank"));
+            ((Player) commandSender).sendMessage(ChatColor.DARK_GREEN + " > IP: " + ChatColor.WHITE + target.getAddress().toString());
+            ((Player) commandSender).sendMessage(ChatColor.DARK_GREEN + " > UUID: " + ChatColor.WHITE + target.getUniqueId().toString());
+            ((Player) commandSender).sendMessage(ChatColor.DARK_GREEN + " > Current Mode: " + ChatColor.WHITE + target.getGameMode().toString());
+            ((Player) commandSender).sendMessage(ChatColor.DARK_GREEN + " > Current World: " + ChatColor.WHITE + target.getWorld().getName());
+}
+        
     }
 }

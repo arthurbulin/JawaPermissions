@@ -26,6 +26,7 @@ import jawamaster.jawapermissions.handlers.PlayerDataHandler;
 import jawamaster.jawapermissions.listeners.PlayerJoin;
 import jawamaster.jawapermissions.listeners.PlayerQuit;
 import jawamaster.jawapermissions.Rank;
+import jawamaster.jawapermissions.commands.whoCommand;
 import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig;
 import org.bukkit.configuration.Configuration;
@@ -123,6 +124,7 @@ public class JawaPermissions extends JavaPlugin {
         this.getCommand("testcommand").setExecutor(new testCommand());
         this.getCommand("unban").setExecutor(new unbanPlayer());
         this.getCommand("reloadperms").setExecutor(new reloadPermissions());
+        this.getCommand("who").setExecutor(new whoCommand());
     }
     
     @Override

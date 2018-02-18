@@ -8,6 +8,7 @@ package jawamaster.jawapermissions.commands;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 /**
  *
@@ -17,22 +18,11 @@ public class testCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender arg0, Command arg1, String arg2, String[] arg3) {
-//        String time;
-//        try {
-//        Long timel = Long.valueOf(time);
-//                System.out.println(timel);
-//        } catch (Exception e){
-//            System.out.println("malformed time variable");
-//        }
-//        try {
-//            time = arg3[0];
-//            System.out.println(time);
-//        } catch (Exception e){
-//            System.out.println("error");
-//            System.out.println(e.getMessage());
-//        }
-//          ((Player) arg0).kickPlayer("Kick reason");
 
+        Player player = (Player) arg0;
+        
+        //player.sendMessage(player);
+        
         return true;
     }
     

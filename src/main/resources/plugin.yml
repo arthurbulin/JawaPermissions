@@ -1,6 +1,6 @@
 name: JawaPermissions
 main: jawamaster.jawapermissions.JawaPermissions
-version: 0.5.4a
+version: 0.5.10a
 commands:
   uuid:
     description: This command returns the UUID of a user.
@@ -23,3 +23,6 @@ commands:
   reloadperms:
     description: Reloads the permissions from disk and recaches them.
     permission: jawapermissions.reload
+  who:
+    description: Gives relavant user data.
+    permission: jawapermissions.who

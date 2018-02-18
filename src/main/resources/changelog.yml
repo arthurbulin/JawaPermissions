@@ -1,9 +1,44 @@
+planned_features:
+    - Clickable player names
+    - Alt detection
+    - IP banning
+    - Changelog command
+    - Update checking
+    - Anticheat?
 ChangeLog:
+    0.5.10a:
+        new:
+            - players with permission are now subscribed to the administrator broadcast channel
+            - all users are subscribed by default to the user broadcast channel
+            - functional who command
+        fixed:
+            - op permissions should function correctly now
+        todo:
+            - see 0.5.4a todos
+            - see about allowing or disallowing default permissions
+    0.5.9a:
+        fixed:
+            - Delayed removal of rank was set way too large and rejoining players were being revoked on rank. Changed interval and added if catch for online players
+    0.5.8a:
+        new:
+            - updated debug output for has call in player permission handler to see what is wrong with perm check
+    0.5.7a:
+        new:
+            - changed it so that jawapermissions.all takes the place of * seeing as yaml can't accept *
+    0.5.6a:
+        fixed:
+            - Fixed immunity
+            - Fixed perm reload
+            - Fixed prohibition checking with perm checking
+        todo:
+            - See 0.5.4a todos
+        known_bugs:
+            - None atm =)
     0.5.4a:
         new:
           - Ranks are now treated as java objects that contain all rank permissions/prohibitions per every existing world and are used to evaluate within rank object
           - Increased performance; hasPermission checks no longer iterate and will add long perms to the list internally when wildcards are specified
-        todos:
+        todo:
           - cleanup old variables and methods
           - comments in code are gross right now
           - JavaDoc is also pretty bad
