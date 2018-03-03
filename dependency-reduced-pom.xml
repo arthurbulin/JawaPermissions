@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>jawamaster</groupId>
   <artifactId>JawaPermissions</artifactId>
-  <version>0.5.10a</version>
+  <version>0.6.0ax</version>
   <build>
     <plugins>
       <plugin>

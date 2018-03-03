@@ -5,6 +5,7 @@
  */
 package jawamaster.jawapermissions.events;
 
+import java.util.Map;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
@@ -13,25 +14,21 @@ import org.bukkit.event.HandlerList;
  *
  * @author Arthur Bulin
  */
-public class PlayerRankChange extends Event{
+public class PlayerInfoLoaded extends Event{
     private static final HandlerList handlers = new HandlerList();
-    static Player player;
-    private static String rank;
+    private static Player player;
+    private static Map<String, Object> playerData;
     
-    public PlayerRankChange(Player who, String newRank) {
-        PlayerRankChange.player = who;
-        PlayerRankChange.rank = newRank;
-        System.out.println("PlayerRankChangeCalled for " + who.getDisplayName() + " with rank " + newRank);
+    public PlayerInfoLoaded(Player who, Map<String, Object> data) {
+        PlayerInfoLoaded.player = who;
+        PlayerInfoLoaded.playerData = data;
+        System.out.println(player.getName() + " has been loaded");
     }
     
     public Player getPlayer() {
         return player;
     }
-    
-    public String getRank() {
-        return rank;
-    }
-    
+
     @Override
     public HandlerList getHandlers() {
         return handlers;
@@ -39,5 +36,5 @@ public class PlayerRankChange extends Event{
     
     public static HandlerList getHandlerList() {
         return handlers;
-    } 
+    }   
 }

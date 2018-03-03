@@ -6,6 +6,16 @@ planned_features:
     - Update checking
     - Anticheat?
 ChangeLog:
+    0.6.0ax:
+        new:
+            - PlayerPreJoin event now deals with bans and data caching and will get rid of user if banned otherwise will allow connection and precache player data
+            - Name logging for new user names.
+        fixed:
+            - Removed lots of dead code. Minimized ES calls to speed things up.
+        todo:
+            - Add more comments and javadoc.
+            - Debug commands.
+            - Information update on join
     0.5.10a:
         new:
             - players with permission are now subscribed to the administrator broadcast channel

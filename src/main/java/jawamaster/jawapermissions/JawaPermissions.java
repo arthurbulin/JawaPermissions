@@ -8,9 +8,7 @@ package jawamaster.jawapermissions;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -25,8 +23,8 @@ import jawamaster.jawapermissions.handlers.PermissionsHandler;
 import jawamaster.jawapermissions.handlers.PlayerDataHandler;
 import jawamaster.jawapermissions.listeners.PlayerJoin;
 import jawamaster.jawapermissions.listeners.PlayerQuit;
-import jawamaster.jawapermissions.Rank;
 import jawamaster.jawapermissions.commands.whoCommand;
+import jawamaster.jawapermissions.listeners.PlayerPreJoin;
 import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig;
 import org.bukkit.configuration.Configuration;
@@ -35,7 +33,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 
 /**
@@ -53,11 +50,8 @@ public class JawaPermissions extends JavaPlugin {
     
     //TODO consider switching from JSONObject to SourceMap.
     //Declare HashMap Storage for the loaded Permissions
-    public static HashMap<String, Object> worldPermissions;
     public static HashMap<UUID, String> playerRank;
     public static HashMap<String, Integer> immunityLevels;
-    public static HashMap<String, String> inheritance;
-    public static HashMap<String, UUID> bannedPlayers;
     
     //New rank object method
     public static Map<String, Rank> rankMap;
@@ -92,15 +86,11 @@ public class JawaPermissions extends JavaPlugin {
         playerDataHandler = new PlayerDataHandler(this);
         
         //Initialize the permission storage HashMap
-        worldPermissions = new HashMap();
         playerRank = new HashMap(); 
         immunityLevels = new HashMap();
-        bannedPlayers = new HashMap();
         
-        //New method
+        //Store the rank objects here
         rankMap = new HashMap();
-        
-        ESHandler.loadBannedPlayers();
         
         //Load permissions. Try-catch to deal with possible exceptions.
         try {
@@ -116,6 +106,7 @@ public class JawaPermissions extends JavaPlugin {
         //Register Event Listeners
         getServer().getPluginManager().registerEvents(new PlayerJoin(), this);
         getServer().getPluginManager().registerEvents(new PlayerQuit(), this);
+        getServer().getPluginManager().registerEvents(new PlayerPreJoin(), this);
         
         //Register Commands
         this.getCommand("uuid").setExecutor(new getUUID());
@@ -167,7 +158,6 @@ public class JawaPermissions extends JavaPlugin {
     }
     
     /** Create the elasticsearch handler istance needed to query the ElasticSearch db.
-     * 
      */
     public void startESHandler(){
 

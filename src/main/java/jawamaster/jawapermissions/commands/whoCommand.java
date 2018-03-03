@@ -7,10 +7,6 @@ package jawamaster.jawapermissions.commands;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jawamaster.jawapermissions.handlers.ESHandler;

@@ -197,16 +197,22 @@ public class PermissionsHandler {
      * @param perm
      * @return */
     public boolean has(Player player, String perm) {
-        //System.out.println("Permission handler has; perm: " + perm);
+        //This will deal with any null rank problems
+        String playerRank = JawaPermissions.playerRank.get(player.getUniqueId());
+        if (JawaPermissions.playerRank.get(player.getUniqueId()) == null) {
+            System.out.println("Something went wrong when checking permission: " + perm + " Assuming guest permissions for player: " + player.getName());
+            playerRank = "guest";
+        }
+        
         if (JawaPermissions.debug){
             System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Has call line 212 for player: " + player.getName());
-            String playerRank = JawaPermissions.playerRank.get(player.getUniqueId());
+            
             System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Player has rank: " + playerRank);
             System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Rank object is: " + JawaPermissions.rankMap.get(playerRank).getRankName());
             System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Permission being checked is: " + perm);
             System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Player has permission: " + JawaPermissions.rankMap.get(playerRank).hasPermission(player.getWorld().getName(), perm));
         }
-        return JawaPermissions.rankMap.get(JawaPermissions.playerRank.get(player.getUniqueId())).hasPermission(player.getWorld().getName(), perm);
+        return JawaPermissions.rankMap.get(playerRank).hasPermission(player.getWorld().getName(), perm);
     }
        
 }
