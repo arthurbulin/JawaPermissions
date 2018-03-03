@@ -162,12 +162,7 @@ public class JawaPermissions extends JavaPlugin {
     public void startESHandler(){
 
         //Initialize the restClient for global use
-        restClient = new RestHighLevelClient(RestClient.builder(new HttpHost(eshost, esport, "http")).setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback() {
-            @Override
-            public RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder requestConfigBuilder) {
-                return requestConfigBuilder.setConnectTimeout(5000).setSocketTimeout(60000);
-            }
-        }).setMaxRetryTimeoutMillis(60000));
+        restClient = new RestHighLevelClient(RestClient.builder(new HttpHost(eshost, esport, "http")).setRequestConfigCallback((RequestConfig.Builder requestConfigBuilder) -> requestConfigBuilder.setConnectTimeout(5000).setSocketTimeout(60000)).setMaxRetryTimeoutMillis(60000));
         
         //Long annoying debug line for restClient connection
         if (debug){
