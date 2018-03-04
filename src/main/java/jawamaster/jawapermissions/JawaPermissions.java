@@ -27,6 +27,7 @@ import jawamaster.jawapermissions.commands.whoCommand;
 import jawamaster.jawapermissions.listeners.PlayerPreJoin;
 import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.Configuration;
 import org.bukkit.event.Event;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -78,6 +79,8 @@ public class JawaPermissions extends JavaPlugin {
     
     @Override
     public void onEnable(){
+        System.out.println(Bukkit.getLogger().getName());
+        System.out.println(Bukkit.getLogger());
         loadConfig();
         startESHandler();
         //Initialize passable instances
@@ -162,8 +165,13 @@ public class JawaPermissions extends JavaPlugin {
     public void startESHandler(){
 
         //Initialize the restClient for global use
+        try{
         restClient = new RestHighLevelClient(RestClient.builder(new HttpHost(eshost, esport, "http")).setRequestConfigCallback((RequestConfig.Builder requestConfigBuilder) -> requestConfigBuilder.setConnectTimeout(5000).setSocketTimeout(60000)).setMaxRetryTimeoutMillis(60000));
-        
+        } catch (Exception e){
+            System.out.println("Ooops");
+            e.printStackTrace();
+            
+        }
         //Long annoying debug line for restClient connection
         if (debug){
             System.out.println(pluginSlug + "High Level Rest Client initialized at: " + restClient.toString());
