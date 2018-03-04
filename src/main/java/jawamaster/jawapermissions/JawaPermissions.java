@@ -79,8 +79,9 @@ public class JawaPermissions extends JavaPlugin {
     
     @Override
     public void onEnable(){
-        System.out.println(Bukkit.getLogger().getName());
-        System.out.println(Bukkit.getLogger());
+        System.out.println(Logger.GLOBAL_LOGGER_NAME);
+        //System.out.println(Logger.);
+        //System.out.println(Bukkit.getLogger());
         loadConfig();
         startESHandler();
         //Initialize passable instances
