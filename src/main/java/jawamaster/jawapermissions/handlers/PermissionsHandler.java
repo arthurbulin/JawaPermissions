@@ -16,6 +16,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import jawamaster.jawapermissions.JawaPermissions;
 import jawamaster.jawapermissions.Rank;
+import org.bukkit.Bukkit;
 import org.bukkit.command.BlockCommandSender;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
@@ -212,6 +213,8 @@ public class PermissionsHandler {
             System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Permission being checked is: " + perm);
             System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Player has permission: " + JawaPermissions.rankMap.get(playerRank).hasPermission(player.getWorld().getName(), perm));
         }
+        //Bukkit.getServer().getPluginManager().getDefaultPermissions(true);
+        
         return JawaPermissions.rankMap.get(playerRank).hasPermission(player.getWorld().getName(), perm);
     }
        
