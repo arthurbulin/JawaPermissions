@@ -30,11 +30,12 @@ public class PlayerPreJoin implements Listener {
     public static void onPlayerJoin(AsyncPlayerPreLoginEvent event) throws IllegalArgumentException, IllegalAccessException, IOException {
         //Check user ban status and retreive the user info
         Map<String, Object> playerData = ESHandler.checkBanStatus(event.getUniqueId());
+        if (JawaPermissions.debug) System.out.println(JawaPermissions.pluginSlug + "[PlayerPreJoin] playerData: " + playerData);
 
         if (!(playerData == null)) { //If data isnt null
             
             //If a user is banned
-            if ((boolean) playerData.get("banned")) { //If user is banned disallow joining and end the event
+            if (Boolean.valueOf(String.valueOf(playerData.get("banned")))) { //If user is banned disallow joining and end the event
 
                 String message = "You have been banned for: "
                         + ((String) (((Map<String, Object>) playerData.get("current-ban"))).get("reason")).trim()
