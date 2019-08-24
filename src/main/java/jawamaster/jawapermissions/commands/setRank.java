@@ -57,7 +57,7 @@ public class setRank implements CommandExecutor {
             return true;
         }
         
-        if (!JawaPermissions.handler.immunityCheck(commandSender, target)){
+        if (!JawaPermissions.permissionsHandler.immunityCheck(commandSender, target)){
             if (commandSender instanceof Player) ((Player) commandSender).sendMessage(target.getName() + "Has immunity to your specified command.");
             return true;
         }

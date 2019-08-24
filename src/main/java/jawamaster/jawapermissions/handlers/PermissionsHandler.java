@@ -12,11 +12,13 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jawamaster.jawapermissions.JawaPermissions;
 import jawamaster.jawapermissions.Rank;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.BlockCommandSender;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
@@ -156,19 +158,51 @@ public class PermissionsHandler {
             Logger.getLogger(PermissionsHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
-    /** Will return true if player can perform operation on target. Will return false if player CANNOT permfor operation on target.
+    /** Will return true if player can perform operation on target.Will return
+     * false if player CANNOT perform operation on target.This is backed by immunityCheck(CommandSender commandSender, UUID target)
      * @param commandSender
      * @param target
      * @return 
      */
-    public boolean immunityCheck(CommandSender commandSender, Player target){
+    public boolean immunityCheck(CommandSender commandSender, Player target) {        
+        return immunityCheck(commandSender, target.getUniqueId());
+    }
+    
+    /** Will return true if player can perform operation on target.Will return false if player CANNOT perform operation on target.
+     * This is backed by onlineImmunityCheck(UUID commandSender, UUID target) and offlineImmunityCheck(UUID commandSender, UUID target)
+     * @param commandSender
+     * @param target
+     * @return 
+     */
+    public boolean immunityCheck(CommandSender commandSender, UUID target){
         if (commandSender instanceof ConsoleCommandSender) return true; //This way console can perform actions on owners
         else if(commandSender instanceof BlockCommandSender) return false; //Command blocks shouldnt be able to do this
         
-        int senderImmunity = JawaPermissions.immunityLevels.get(JawaPermissions.playerRank.get(((Player) commandSender).getUniqueId()));
-        int targetImmunity = JawaPermissions.immunityLevels.get(JawaPermissions.playerRank.get(target.getUniqueId()));
+        if (plugin.getServer().getPlayer(target) == null) return offlineImmunityCheck(((Player) commandSender).getUniqueId(), target);
+        else return onlineImmunityCheck(((Player) commandSender).getUniqueId(), target);
+    }
+    
+    /** Will return true if player can perform operation on target. Will return false if player CANNOT perform operation on target.
+     * This will only work for an ONLINE target and should only be accessed by this class.
+     * @param commandSender
+     * @param target
+     * @return 
+     */
+    private boolean onlineImmunityCheck(UUID commandSender, UUID target){
+        int senderImmunity = JawaPermissions.immunityLevels.get(JawaPermissions.playerRank.get(commandSender));
+        int targetImmunity = JawaPermissions.immunityLevels.get(JawaPermissions.playerRank.get(target));
         return senderImmunity < targetImmunity;
+    }
+    
+    /** Will return true if player can perform operation on target. Will return false if player CANNOT perform operation on target.
+     * This will only work for an OFFLINE target and should only be accessed by this class.
+     * @param commandSender
+     * @param target
+     * @return 
+     */
+    private boolean offlineImmunityCheck(UUID commandSender, UUID target) {
+        //TODO create the logic to determine offline immunity checks. Right now this just allows it.
+        return true;
     }
     
     /** Redirects permissions check to the propper has method based on the instanceof the commandSender. This returns false for any commandSender that

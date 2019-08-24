@@ -32,7 +32,7 @@ public class JawaPermissibleBase extends PermissibleBase {
     public JawaPermissibleBase (Player player, JawaPermissions plugin) {
         super(player);
         this.player = player;
-        this.handler = JawaPermissions.handler;
+        this.handler = JawaPermissions.permissionsHandler;
     }
     
     @Override
@@ -76,7 +76,7 @@ public class JawaPermissibleBase extends PermissibleBase {
     @Override
     public boolean hasPermission(String arg0) {
         //This will give op all permissions
-        //return handler.has(player, arg0.toLowerCase());
+        //return permissionsHandler.has(player, arg0.toLowerCase());
         return isOp() || handler.has(player, arg0.toLowerCase());
     }
     

@@ -6,6 +6,9 @@ planned_features:
     - Update checking
     - Anticheat?
 ChangeLog:
+    0.6.0a:
+        new:
+            - Updating EShandler for 1.14
     0.6.0ax:
         new:
             - PlayerPreJoin event now deals with bans and data caching and will get rid of user if banned otherwise will allow connection and precache player data

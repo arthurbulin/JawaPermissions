@@ -5,7 +5,11 @@
 */
 package jawamaster.jawapermissions.listeners;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import jawamaster.jawapermissions.JawaPermissions;
+import jawamaster.jawapermissions.handlers.ESHandler;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -22,6 +26,17 @@ public class PlayerQuit implements Listener {
     public static void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         
+         Bukkit.getScheduler().runTaskAsynchronously(JawaPermissions.plugin, new Runnable() {
+             @Override
+            public void run() {
+                
+                HashMap<String, Object> logoutUpdate = new HashMap();
+                logoutUpdate.put("last-logout", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+                 ESHandler.updateData(player, logoutUpdate);
+                 if (JawaPermissions.debug) System.out.println(JawaPermissions.pluginSlug + "[PlayerQuitEvent] updating " + player.getName() + "'s last logout time.");
+            }
+         });
+        
         Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(JawaPermissions.plugin, new Runnable() {
             public void run() {
                 if (Bukkit.getServer().getPlayer(player.getName()) == null){
@@ -30,6 +45,7 @@ public class PlayerQuit implements Listener {
                     if (JawaPermissions.debug) {
                         System.out.println(JawaPermissions.pluginSlug + "[PlayerQuitEvent] "+ player.getName() + " with rank " + removed + ", has been removed from the player cache.");
                     }
+                    
                 } else {
                     //Do nothing
                 }

@@ -27,11 +27,11 @@ import jawamaster.jawapermissions.commands.whoCommand;
 import jawamaster.jawapermissions.listeners.PlayerPreJoin;
 import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.Configuration;
 import org.bukkit.event.Event;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.json.simple.parser.ParseException;
 
@@ -40,15 +40,14 @@ import org.json.simple.parser.ParseException;
  * @author Arthur Bulin
  */
 public class JawaPermissions extends JavaPlugin {
-    //Declare plugin and permission handler
-    public static PermissionsHandler handler;
+    //Declare plugin and permission permissionsHandler
+    public static PermissionsHandler permissionsHandler;
     public static JawaPermissions plugin;
     public static RestHighLevelClient restClient;
     public static ESHandler eshandler;
     public static PlayerDataHandler playerDataHandler;
     public static Event rankChangeEvent;
     
-    //TODO consider switching from JSONObject to SourceMap.
     //Declare HashMap Storage for the loaded Permissions
     public static HashMap<UUID, String> playerRank;
     public static HashMap<String, Integer> immunityLevels;
@@ -66,6 +65,7 @@ public class JawaPermissions extends JavaPlugin {
     
     public final static String pluginSlug = "[JawaPermissions] ";
     
+    
     //Return the plugin
     public static JawaPermissions getPlugin() {
         return plugin;
@@ -78,11 +78,12 @@ public class JawaPermissions extends JavaPlugin {
     
     @Override
     public void onEnable(){
+        Bukkit.getLogger().setLevel(Level.FINEST);
         loadConfig();
         startESHandler();
         //Initialize passable instances
         plugin = this;
-        handler = new PermissionsHandler(this);
+        permissionsHandler = new PermissionsHandler(this);
         playerDataHandler = new PlayerDataHandler(this);
         
         //Initialize the permission storage HashMap
@@ -94,7 +95,7 @@ public class JawaPermissions extends JavaPlugin {
         
         //Load permissions. Try-catch to deal with possible exceptions.
         try {
-            handler.load();
+            permissionsHandler.load();
         } catch (FileNotFoundException | ParseException ex) {
             Logger.getLogger(JawaPermissions.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
@@ -116,6 +117,9 @@ public class JawaPermissions extends JavaPlugin {
         this.getCommand("unban").setExecutor(new unbanPlayer());
         this.getCommand("reloadperms").setExecutor(new reloadPermissions());
         this.getCommand("who").setExecutor(new whoCommand());
+        
+
+  
     }
     
     @Override
@@ -157,17 +161,14 @@ public class JawaPermissions extends JavaPlugin {
         }
     }
     
-    /** Create the elasticsearch handler istance needed to query the ElasticSearch db.
+    /** Create the elasticsearch permissionsHandler instance needed to query the ElasticSearch db.
      */
     public void startESHandler(){
 
         //Initialize the restClient for global use
-        restClient = new RestHighLevelClient(RestClient.builder(new HttpHost(eshost, esport, "http")).setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback() {
-            @Override
-            public RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder requestConfigBuilder) {
-                return requestConfigBuilder.setConnectTimeout(5000).setSocketTimeout(60000);
-            }
-        }).setMaxRetryTimeoutMillis(60000));
+        restClient = new RestHighLevelClient(RestClient.builder(new HttpHost(eshost, esport, "http"))
+                .setRequestConfigCallback((RequestConfig.Builder requestConfigBuilder) -> 
+                        requestConfigBuilder.setConnectTimeout(5000).setSocketTimeout(60000)));
         
         //Long annoying debug line for restClient connection
         if (debug){
@@ -175,16 +176,15 @@ public class JawaPermissions extends JavaPlugin {
             System.out.println(pluginSlug + "With host: " + eshost);
             System.out.println(pluginSlug + "on port: " + esport);
             boolean restPing = false;
-            try {
-                restPing = restClient.ping();
-            } catch (IOException ex) {
-                Logger.getLogger(JawaPermissions.class.getName()).log(Level.SEVERE, null, ex);
-            }
             System.out.println(pluginSlug + "ElasticSearch DB pings as: " + restPing );
         }
         
         eshandler = new ESHandler(this);
         
     }
+    
+    
+//Public get interfaces
+
 
 }

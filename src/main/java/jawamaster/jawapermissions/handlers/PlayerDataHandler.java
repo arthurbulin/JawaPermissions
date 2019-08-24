@@ -6,13 +6,14 @@
 package jawamaster.jawapermissions.handlers;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import jawamaster.jawapermissions.JawaPermissions;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
+import org.json.simple.JSONArray;
 
 /**
  *
@@ -27,26 +28,27 @@ public class PlayerDataHandler {
     }
     
     /** Creates the player data for commiting to the ElasticSearch index.
-     *
-     * @param player
+     * @param name
+     * @param ip
      * @return
      */
-    public Map<String, Object> firstTimePlayer(Player player){
-        Map<String, Object> playerData = new HashMap();
-        playerData.put("first-login", LocalDateTime.now());
-        playerData.put("last-login", LocalDateTime.now());
-        playerData.put("last-logout", "none");
-        playerData.put("name", player.getName());
-        playerData.put("rank", "guest"); //TODO pull basic rank from permissions files and immunity levels
-        playerData.put("banned", false);
+    public static HashMap<String, Object> firstTimePlayer(String name, String ip){
+        HashMap<String, Object> playerData = new HashMap();
+        playerData.put("first-login", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        playerData.put("last-login", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        playerData.put("last-logout", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         playerData.put("play-time", 0);
-        playerData.put("nick", "$$");
-        playerData.put("tag", "$$");
-        playerData.put("star", "$$");
         
-        Set<Object> ipSet = new HashSet();
-        ipSet.add(player.getAddress().getAddress());
-        playerData.put("ip",ipSet);
+        playerData.put("name", name);
+        playerData.put("name-data", (new JSONArray()).add(name) );
+        playerData.put("rank", "guest"); //TODO pull basic rank from permissions files and immunity levels
+        
+        playerData.put("banned", false);
+        playerData.put("nick", new HashMap());
+        playerData.put("tag", "false");
+        playerData.put("star", new HashMap());
+        
+        playerData.put("ip",(new JSONArray()).add(ip));
 
         if (JawaPermissions.debug){
             System.out.print(JawaPermissions.pluginSlug + handlerSlug + "firstTimePlayer data created as follows: " + playerData.toString());
@@ -100,4 +102,53 @@ public class PlayerDataHandler {
         }
         
     }
+    
+    /** *  Determine if an ip address is contained within the player's history set.
+     * If it isn't then add it and return it. If it is already in the set then 
+     * return null.
+     * @param ipAddress
+     * @return 
+     */
+    public static JSONArray ipData(String ipAddress, JSONArray ipData){
+        if (!ipData.contains(ipAddress)) {
+            ipData.add(ipAddress);
+            return ipData;
+        } else {
+            return null;
+        }
+    }
+    
+    /** Determine if a user's name is already saved in their historical name data.
+     * If it isn't add it and return the JSONArray else it will return null. Should
+     * be executed after checking if saved name does not equal new name.
+     * @param name
+     * @param nameData
+     * @return 
+     */
+    public static JSONArray nameData(String name, JSONArray nameData){
+        if (!nameData.contains(name)){
+            nameData.add(name);
+            return nameData;
+        } else {
+            return null;
+        }
+    }
+
+    /** *  Determine if a user's nick is already saved in their historical nick data.
+     * If it isn't add it and return the JSONArray else it will return null.Should
+     * be executed after checking if saved nick does not equal new nick.
+     * @param nick
+     * @param nickData
+     * @return 
+     */
+    public static JSONArray nickData (String nick, JSONArray nickData) {
+        if (!nickData.contains(nick)) {
+            nickData.add(nick);
+            return nickData;
+        } else {
+            return null;
+        }
+    }
+    
+    
 }
