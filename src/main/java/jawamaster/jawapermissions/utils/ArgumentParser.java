@@ -61,27 +61,16 @@ public class ArgumentParser {
     }
 
     private static HashMap parse(Object[] values, Object[] inds, Object[] diffs, String[] args) {
-//        Arrays.asList(values).forEach((i) -> {
-//            System.out.print(String.valueOf(i) + " ");
-//        });
-//        System.out.println();
-//        Arrays.asList(inds).forEach((i) -> {
-//            System.out.print(String.valueOf(i) + " ");
-//        });
-//        System.out.println();
-//        Arrays.asList(diffs).forEach((i) -> {
-//            System.out.print(String.valueOf(i) + " ");
-//        });
-//        System.out.println();
 
         HashMap<String,String> returnvalues = new HashMap();
 
         for (int i = 0; i < values.length; i++) {
-            //System.out.println("i: " + String.valueOf(i) + " inds[i]: " + String.valueOf(inds[i]));
-            if (((int) inds[i] - 1) >= 0) {
-                returnvalues.put(((String) values[i]).replace("-", ""), String.join(" ", Arrays.copyOfRange(args, (int) inds[i] + 1, (int) inds[i] + (int) diffs[i])));
-            } else {
+            if (((int) inds[i] + 1) > ((int) inds[i] + (int) diffs[i] -1)) {
+                System.out.println(((int) inds[i] - 1));
                 returnvalues.put("flags", ((String) values[i]).replace("-", ""));
+            }else {
+                System.out.println(((int) inds[i] - 1) + " : " + String.join(" ", Arrays.copyOfRange(args, (int) inds[i] + 1, (int) inds[i] + (int) diffs[i])));
+                returnvalues.put(((String) values[i]).replace("-", ""), String.join(" ", Arrays.copyOfRange(args, (int) inds[i] + 1, (int) inds[i] + (int) diffs[i])));
             }
         }
 
