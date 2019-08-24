@@ -51,7 +51,8 @@ public class banPlayer implements CommandExecutor {
             return true; //TODO see what happens when the command is run without arguments
         }
         HashMap<String, String> parsedArguments = ArgumentParser.getArgumentValues(arg3);
-
+        if (JawaPermissions.debug) System.out.println(JawaPermissions.pluginSlug + "[BanPlayer] parsedArguments: " + parsedArguments );
+        
         if (!parsedArguments.containsKey("p")) {
             commandSender.sendMessage("Error: No player flag found! Usage: " + usage);
             return true;
@@ -64,7 +65,7 @@ public class banPlayer implements CommandExecutor {
             if (!acceptedFlags.contains(key)) {
                 commandSender.sendMessage("Error: Unknown flag found: " + key + "Usage: " + usage);
             } else if (key.equals("flags")) {
-                for (char ch : key.toCharArray()) {
+                for (char ch : parsedArguments.get("flags").toCharArray()) {
                     if (!acceptedFlags.contains(ch)) {
                         commandSender.sendMessage("Error: Unknown flag found: " + String.valueOf(ch) + "Usage: " + usage);
 
@@ -73,7 +74,7 @@ public class banPlayer implements CommandExecutor {
             }
         }
 
-        if (parsedArguments.get("flags").contains("o")) { //Assume player is offline
+        if (parsedArguments.containsKey("flags") && parsedArguments.get("flags").contains("o")) { //Assume player is offline
             OfflinePlayer[] targetPlayer = JawaPermissions.plugin.getServer().getOfflinePlayers();
             //TODO search ES for player match
             //targetPlayerData should contain the new data
