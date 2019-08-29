@@ -8,6 +8,7 @@ package jawamaster.jawapermissions.listeners;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.Map;
 import jawamaster.jawapermissions.JawaPermissions;
 import jawamaster.jawapermissions.handlers.ESHandler;
@@ -16,6 +17,7 @@ import jawamaster.jawapermissions.handlers.PlayerDataHandler;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
+import org.json.simple.JSONObject;
 
 /**
  *
@@ -29,7 +31,9 @@ public class PlayerPreJoin implements Listener {
     @EventHandler
     public static void onPlayerJoin(AsyncPlayerPreLoginEvent event) throws IllegalArgumentException, IllegalAccessException, IOException {
         //Check user ban status and retreive the user info
-        Map<String, Object> playerData = ESHandler.checkBanStatus(event.getUniqueId());
+        Map<String, Object> playerRawData = ESHandler.checkBanStatus(event.getUniqueId());
+        HashMap<String, HashMap> bans = (HashMap) playerRawData.get("bans");
+        HashMap<String, String> playerData = (HashMap) playerRawData.get("player");
         if (JawaPermissions.debug) System.out.println(JawaPermissions.pluginSlug + "[PlayerPreJoin] playerData: " + playerData);
 
         if (!(playerData == null)) { //If data isnt null
@@ -38,9 +42,12 @@ public class PlayerPreJoin implements Listener {
             if (Boolean.valueOf(String.valueOf(playerData.get("banned")))) { //If user is banned disallow joining and end the event
 
                 String message = "You have been banned for: "
-                        + ((String) (((Map<String, Object>) playerData.get("current-ban"))).get("reason")).trim()
-                        + ". This ban will end on: "
-                        + LocalDateTime.parse(((CharSequence) (((Map<String, Object>) playerData.get("current-ban"))).get("end-of-ban"))).format(DateTimeFormatter.ISO_DATE_TIME);
+                        + ((HashMap<String,String>) bans.get(playerData.get("latest-ban"))).get("reason").trim();
+                if (!"forever".equals(((HashMap<String,String>) bans.get(playerData.get("latest-ban"))).get("banned-until"))) {
+                    message += ". This ban will end on: ";
+                        //+ LocalDateTime.parse(((CharSequence) (((Map<String, Object>) playerData.get("current-ban"))).get("end-of-ban"))).format(DateTimeFormatter.ISO_DATE_TIME);
+                }
+                       
 
                 event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, message);
 
@@ -55,10 +62,10 @@ public class PlayerPreJoin implements Listener {
 
             //If player data is null treat as a new player    
         } else { //if user data is null. So is a new user.
-            playerData = PlayerDataHandler.firstTimePlayer(event.getName(), event.getAddress().getHostAddress());
+            playerRawData = PlayerDataHandler.firstTimePlayer(event.getName(), event.getAddress().getHostAddress());
 
-            indexPlayerData(event.getUniqueId(), playerData);
-            JawaPermissions.playerRank.put(event.getUniqueId(), (String) playerData.get("rank"));
+            indexPlayerData(event.getUniqueId(), playerRawData);
+            JawaPermissions.playerRank.put(event.getUniqueId(), (String) playerRawData.get("rank"));
 
         }
 

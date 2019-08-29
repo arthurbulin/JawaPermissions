@@ -40,7 +40,7 @@ public class banPlayer implements CommandExecutor {
     public boolean onCommand(CommandSender commandSender, Command arg1, String arg2, String[] arg3) {
 
         //Declare the needed variables for the assessment
-        String usage = "/ban <-[o|u|f]> -p <playername> -r <reason for ban> [<-d|h|m> <integer>]";
+        String usage = "/ban <-[o|u|f]> -p <playername> -r <reason for ban> [<-d|h|m> <integer>] [<-b> <your username>]";
         
         //TODO add options for silent kick or ban
         HashSet<String> acceptedFlags = new HashSet(Arrays.asList("p", "r", "h", "flags", "d", "m", "o", "u", "f", "b"));
@@ -59,9 +59,14 @@ public class banPlayer implements CommandExecutor {
         }
         if (!parsedArguments.containsKey("r")) {
             commandSender.sendMessage("Error: No reason flag found! Usage: " + usage);
+            return true;
+        }
+        if (parsedArguments.containsKey("b") && (commandSender instanceof Player)) {
+            commandSender.sendMessage("Error: The by(-b) flag is only used when unbanning from the console!");
+            return true;
         }
 
-        for (String key : parsedArguments.keySet()) {
+        parsedArguments.keySet().forEach((key) -> {
             if (!acceptedFlags.contains(key)) {
                 commandSender.sendMessage("Error: Unknown flag found: " + key + "Usage: " + usage);
             } else if (key.equals("flags")) {
@@ -72,7 +77,7 @@ public class banPlayer implements CommandExecutor {
                     }
                 }
             }
-        }
+        });
 
         if (parsedArguments.containsKey("flags") && parsedArguments.get("flags").contains("o")) { //Assume player is offline
             OfflinePlayer[] targetPlayer = JawaPermissions.plugin.getServer().getOfflinePlayers();
@@ -98,7 +103,7 @@ public class banPlayer implements CommandExecutor {
         }
 
         //TODO If this is a ban update adjust for updating
-        if (parsedArguments.get("flags").contains("u")) {
+        if (parsedArguments.containsKey("flags") && parsedArguments.get("flags").contains("u")) {
             //get current ban information
             //create update data
             //update data in ES
@@ -134,10 +139,11 @@ public class banPlayer implements CommandExecutor {
                 if (parsedArguments.containsKey("m")) {
                     banDate.plusDays(Integer.valueOf(parsedArguments.get("m")));
                 }
+                banIndex.put("banned-until", banDate.format(DateTimeFormatter.ISO_LOCAL_DATE));
             } else {
                 banDate = LocalDateTime.MAX;
+                banIndex.put("banned-until", "forever");
             }
-            banIndex.put("banned-until", banDate.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
 
             banIndex.put("active", true);
             //ES Async put entry in ban index
@@ -151,7 +157,7 @@ public class banPlayer implements CommandExecutor {
             //Build ban string
             if (targetPlayer != null) {
                 String banString = "You have been banned for: " + ((String) parsedArguments.get("r")).trim() + ".";
-                if (!banDate.isEqual(LocalDateTime.MAX)) banString += " This ban will end on: " + TimeParser.getHumanReadableDateTime(parsedArguments.get("banned-until"));
+                if (!((String) banIndex.get("banned-until")).equals("forever")) banString += " This ban will end on: " + TimeParser.getHumanReadableDateTime(parsedArguments.get("banned-until"));
                 targetPlayer.kickPlayer(banString);
             }
 

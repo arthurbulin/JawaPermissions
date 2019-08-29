@@ -7,6 +7,7 @@ package jawamaster.jawapermissions.handlers;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,6 +22,9 @@ import org.bukkit.Server;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.bulk.BulkItemResponse;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
@@ -30,6 +34,7 @@ import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
@@ -57,6 +62,9 @@ public class ESHandler {
 
     private final static String handlerSlug = "[ESHandler] ";
     private static boolean notInES = false;
+    private final static String REDMESSAGEPLUG = ChatColor.RED + "> ";
+    private final static String GREENMESSAGEPLUG = ChatColor.GREEN + "> ";
+    
 
     public ESHandler(JawaPermissions plugin) {
         this.plugin = plugin;
@@ -160,9 +168,8 @@ public class ESHandler {
      * @throws java.io.IOException
      */
     public static Map<String, Object> checkBanStatus(UUID target) throws IOException {
-        
+        //TODO Clean this mess up
         //TODO Convert all to MultiGetRequest
-        //TODO return previous ban data
         searchRequest = new SearchRequest("players");
         searchSourceBuilder = new SearchSourceBuilder();
 
@@ -201,6 +208,8 @@ public class ESHandler {
         }
 
     }
+    
+    
 
     /**
      * Updates a player's ban data allowing reason and length of ban time to be
@@ -279,41 +288,110 @@ public class ESHandler {
 
     }
     
+//    public static void executeAsyncBulkRequest(HashSet requests){
+//        BulkRequest bulkRequest = new BulkRequest();
+//        bulkRequest.add(requests);
+//        
+//        restClient.bulkAsync(bulkRequest, RequestOptions.DEFAULT, new ActionListener<BulkResponse>() {
+//            @Override
+//            public void onResponse(BulkResponse arg0) {
+//                
+//            }
+//
+//            @Override
+//            public void onFailure(Exception arg0) {
+//                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//            }
+//        });
+//    }
+    
     public static void banIndexUpdate(UUID target, HashMap<String,Object> banIndex){
+        BulkRequest bulkRequest = new BulkRequest();
         UpdateRequest updateRequest = new UpdateRequest();
-        updateRequest.index("bans").id(target.toString()).doc(banIndex);
         
-        restClient.updateAsync(updateRequest, RequestOptions.DEFAULT, new ActionListener<UpdateResponse>() {
-            @Override
-            public void onResponse(UpdateResponse arg0) {
-                System.out.println(target + " has had ban data entered in the ban index.");
-            }
-
-            @Override
-            public void onFailure(Exception arg0) {
-                //TODO resolve failure notifications
-                throw new UnsupportedOperationException("Ban index update failed"); //To change body of generated methods, choose Tools | Templates.
-            }
-        });
+        String banTime = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME); //Ban time becomes the specific identifier for that object in the ban index
         
+        HashMap<String, Object> banData = new HashMap();
+        banData.put(banTime, banIndex);
+        
+        updateRequest
+                .index("bans")
+                .id(target.toString())
+                .doc(banData)
+                .docAsUpsert(true); //Upsert so we create if it doesnt exist        
 
         HashMap<String,Object> playerData = new HashMap();
-        playerData.put("banned", true);
-        UpdateRequest playerDataUpdate = new UpdateRequest("players", target.toString()).doc(playerData);
         
-        restClient.updateAsync(playerDataUpdate, RequestOptions.DEFAULT, new ActionListener<UpdateResponse>() {
+        playerData.put("banned", true);
+        playerData.put("latest-ban", banTime); //Create this so we link back to the latest ban in the index
+        
+        UpdateRequest playerDataUpdate = new UpdateRequest();
+        
+        playerDataUpdate
+                .index("players")
+                .id(target.toString())
+                .doc(playerData)
+                .docAsUpsert(true);
+
+        bulkRequest.add(updateRequest);
+        bulkRequest.add(playerDataUpdate);
+        
+        restClient.bulkAsync(bulkRequest, RequestOptions.DEFAULT, new ActionListener<BulkResponse>() {
             @Override
-            public void onResponse(UpdateResponse arg0) {
+            public void onResponse(BulkResponse arg0) {
+                for (BulkItemResponse res : arg0.getItems()){
+                    System.out.println(res.getFailure());
+                    System.out.println(res.getFailureMessage());
+
+                }
+                System.out.println(target + " has had ban data entered in the ban index.");
                 System.out.println(target + " has been marked as banned in the player index.");
             }
 
             @Override
             public void onFailure(Exception arg0) {
-                //TODO resolve failure exceptions
-                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                arg0.printStackTrace();
+                System.out.println("Fuck bulk request failed.");
             }
         });
         
+    }
+    
+    public static void unbanIndexUpdate(UUID target, HashMap<String,Object> banData){
+        BulkRequest bulkRequest = new BulkRequest();
+        UpdateRequest updateRequest = new UpdateRequest();
+        updateRequest
+                .id(target.toString())
+                .index("bans")
+                .doc(banData)
+                .docAsUpsert(true);
+        
+        HashMap<String, Object> playerData = new HashMap();
+        playerData.put("banned", false);
+    }
+    
+    public static void runAsyncBulkRequest(BulkRequest request, CommandSender messageToo){
+        restClient.bulkAsync(request, RequestOptions.DEFAULT, new ActionListener<BulkResponse>() {
+            @Override
+            public void onResponse(BulkResponse arg0) {
+                for (BulkItemResponse resp : arg0.getItems()){
+                    if (!resp.isFailed()) messageToo.sendMessage(GREENMESSAGEPLUG + "Request to index: " + resp.getIndex() + " for _id: " + resp.getId() + " has been successful!" );
+                    else {
+                        messageToo.sendMessage(REDMESSAGEPLUG + "Request to index: " + resp.getIndex() + " for _id: " + resp.getId() + " has failed!!!");
+                        messageToo.sendMessage(REDMESSAGEPLUG + "Failure Message: " + resp.getFailureMessage());
+                        messageToo.sendMessage(REDMESSAGEPLUG + "Give your technical administrator this id to trace the error in the log: " +  resp.toString());
+                        System.out.println(resp.toString() + ": runAsyncBulkRequest failure!! FailureMessage: " + resp.getFailureMessage());
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Exception arg0) {
+                System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Something sever happend in runAsyncBulkRequest!!");
+                System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Exception:");
+                arg0.printStackTrace();
+            }
+        });
     }
 
     public static void whoLookUp(CommandSender commandSender, Player target) throws IOException {
@@ -357,27 +435,32 @@ public class ESHandler {
 
         return (HashMap<String, Object>) hits[0].getSourceAsMap();
     }
+    
+    /** Will return the UUID of an offline player
+     * @param target
+     * @return
+     * @throws IOException 
+     */
+    public static SearchHit findOfflinePlayer(String target) throws IOException{
+        SearchRequest playerSearchRequest = new SearchRequest();
+        SearchSourceBuilder playerSearchSourceBuilder = new SearchSourceBuilder();
+        
+        playerSearchSourceBuilder.query(QueryBuilders.matchQuery("name", target));
+        playerSearchRequest.source(playerSearchSourceBuilder);
+        
+        SearchResponse playerSearchResponse = restClient.search(playerSearchRequest, RequestOptions.DEFAULT);
+        
+        if (JawaPermissions.debug) System.out.print(JawaPermissions.pluginSlug + handlerSlug + " Search Response: " + playerSearchResponse);
+        SearchHit[] hits = playerSearchResponse.getHits().getHits();
+        if (JawaPermissions.debug) {
+            System.out.println(JawaPermissions.pluginSlug + handlerSlug + " Hits Length: " + hits.length);
+            System.out.println(JawaPermissions.pluginSlug + handlerSlug + " Hits: ");
+            System.out.println(JawaPermissions.pluginSlug + handlerSlug + " return: " + hits[0]);
+        }
+        if (hits.length != 1) return null;
+        
+        return hits[0];
 
-//    public static void refreshPlayerData(Player target){
-//        Map<String, Object> updateData = new HashMap();
-//
-//        updateData.put("last-login", LocalDateTime.now());
-//
-//        //update player name in the 
-//        if (!target.getName().equals(playerData.get("name"))) {
-//            updateData.put("name", event.getName());
-//        }
-//
-//        //Update player nameData
-//        if (!((JSONArray) playerData.get("nameData")).contains(event.getName())) {
-//            ((JSONArray) playerData.get("nameData")).add(event.getName());
-//            updateData.put("nameData", (JSONArray) playerData.get("nameData"));
-//        }
-//
-//        //update player ip data
-//        if (!((JSONArray) playerData.get("ip")).contains(event.getAddress().getHostAddress())) {
-//            ((JSONArray) playerData.get("ip")).add(event.getAddress().getHostAddress());
-//            updateData.put("ip", (JSONArray) playerData.get("ip"));
-//        }
-//    }
+    }
+
 }
