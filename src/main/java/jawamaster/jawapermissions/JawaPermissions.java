@@ -24,8 +24,10 @@ import jawamaster.jawapermissions.handlers.PlayerDataHandler;
 import jawamaster.jawapermissions.listeners.PlayerJoin;
 import jawamaster.jawapermissions.listeners.PlayerQuit;
 import jawamaster.jawapermissions.commands.whoCommand;
+import jawamaster.jawapermissions.listeners.AsyncPlayerKickListener;
 import jawamaster.jawapermissions.listeners.PlayerPreJoin;
 import org.apache.http.HttpHost;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.Configuration;
@@ -60,8 +62,9 @@ public class JawaPermissions extends JavaPlugin {
     public static String eshost, newPlayerMessage, defaultWorld, serverName;
     public static int esport;
     public static boolean debug;
-//    private static CredentialsProvider credentialsProvider;
-//    private static String esUser, esPass;
+    private static CredentialsProvider credentialsProvider;
+    private static String esUser, esPass;
+    private static boolean unsecuredMode;
     
     public final static String pluginSlug = "[JawaPermissions] ";
     
@@ -108,6 +111,7 @@ public class JawaPermissions extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerJoin(), this);
         getServer().getPluginManager().registerEvents(new PlayerQuit(), this);
         getServer().getPluginManager().registerEvents(new PlayerPreJoin(), this);
+        getServer().getPluginManager().registerEvents(new AsyncPlayerKickListener(), this);
         
         //Register Commands
         this.getCommand("uuid").setExecutor(new getUUID());
@@ -150,7 +154,10 @@ public class JawaPermissions extends JavaPlugin {
         if (config.isSet("new-player-message")){
             newPlayerMessage = (String) config.get("new-player-message");
         }
-        
+        if (config.isSet("unsecured-mode")) {
+            unsecuredMode = config.getBoolean("unsecured-mode");
+        }
+
         if (debug){
             System.out.println(pluginSlug + "Debug is turned on! This is not recommended unless you are a dev or are tracking a problem!");
             System.out.println(pluginSlug + "If you are experiencing problems in a clean run environment please contact the dev on github.");
@@ -164,12 +171,25 @@ public class JawaPermissions extends JavaPlugin {
     /** Create the elasticsearch permissionsHandler instance needed to query the ElasticSearch db.
      */
     public void startESHandler(){
-
-        //Initialize the restClient for global use
-        restClient = new RestHighLevelClient(RestClient.builder(new HttpHost(eshost, esport, "http"))
-                .setRequestConfigCallback((RequestConfig.Builder requestConfigBuilder) -> 
-                        requestConfigBuilder.setConnectTimeout(5000).setSocketTimeout(60000)));
-        
+//        if (!unsecuredMode) {
+//            credentialsProvider = new BasicCredentialsProvider();
+//            credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(esUser, esPass));
+//
+//            //Initialize the restClient for global use
+//            RestClientBuilder builder = RestClient.builder(new HttpHost(eshost, esport, "http"));
+//            builder.setHttpClientConfigCallback(new HttpClientConfigCallback() {
+//                @Override
+//                public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
+//                    return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+//                }
+//            });
+//            builder.setRequestConfigCallback((RequestConfig.Builder requestConfigBuilder) -> requestConfigBuilder.setConnectTimeout(5000).setSocketTimeout(60000));
+//            restClient = new RestHighLevelClient(builder);
+//        } else {
+            restClient = new RestHighLevelClient(RestClient.builder(new HttpHost(eshost, esport, "http"))
+                    .setRequestConfigCallback((RequestConfig.Builder requestConfigBuilder)
+                            -> requestConfigBuilder.setConnectTimeout(5000).setSocketTimeout(60000)));
+//        }
         //Long annoying debug line for restClient connection
         if (debug){
             System.out.println(pluginSlug + "High Level Rest Client initialized at: " + restClient.toString());

@@ -5,10 +5,11 @@
  */
 package jawamaster.jawapermissions.commands;
 
+import jawamaster.jawapermissions.JawaPermissions;
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 
 /**
  *
@@ -17,11 +18,14 @@ import org.bukkit.entity.Player;
 public class testCommand implements CommandExecutor {
 
     @Override
-    public boolean onCommand(CommandSender arg0, Command arg1, String arg2, String[] arg3) {
+    public boolean onCommand(CommandSender commandSender, Command arg1, String arg2, String[] arg3) {
 
-        Player player = (Player) arg0;
-        
-        //player.sendMessage(player);
+        JawaPermissions.plugin.getServer().getScheduler().runTaskAsynchronously(JawaPermissions.plugin, new Runnable() {
+            @Override
+            public void run() {
+                commandSender.sendMessage(ChatColor.RED + " test async messages!");
+            }
+        });
         
         return true;
     }

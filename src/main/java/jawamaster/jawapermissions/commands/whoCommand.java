@@ -34,10 +34,18 @@ public class whoCommand implements CommandExecutor {
                 stringPlayers[i] = onlinePlayers[i].getName();
             }
 
-            if (commandSender instanceof Player) ((Player) commandSender).sendMessage(ChatColor.DARK_GREEN + "> Currently Online Players: " + ChatColor.WHITE + String.join(",", Arrays.toString(stringPlayers)));
+            commandSender.sendMessage(ChatColor.DARK_GREEN + "> Currently Online Players: " + ChatColor.WHITE + String.join(",", Arrays.toString(stringPlayers)));
 
         } else if (arg3.length >= 1){
             if (commandSender.hasPermission("jawapermissions.who.detail")) {
+                
+                //Is user offline
+                    //get uuid and player data via search
+                //if online
+                    //get UUID from player object and search
+                
+                
+                
                 Player target = Bukkit.getServer().getPlayer(arg3[0]);
                 try {
                     ESHandler.whoLookUp(commandSender, target);
@@ -45,8 +53,7 @@ public class whoCommand implements CommandExecutor {
                     Logger.getLogger(whoCommand.class.getName()).log(Level.SEVERE, null, ex);
                 }
             } else {
-                if (commandSender instanceof Player) ((Player) commandSender).sendMessage(ChatColor.DARK_RED + "You do not have permission to perform a detailed lookup.");
-                else System.out.println(ChatColor.DARK_RED + "You do not have permission to perform a detailed lookup.");
+                commandSender.sendMessage(ChatColor.DARK_RED + "You do not have permission to perform a detailed lookup.");
             }
 
         }

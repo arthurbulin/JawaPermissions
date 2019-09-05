@@ -1,0 +1,9 @@
+{
+    "banSuccessServer": {
+        "messages": ["{0} has dropped the ban hammer on {1}."]
+    },
+    "banSuccessSender": {
+        "messages": ["You have banned {0} for {1}"]
+    }
+    
+}
