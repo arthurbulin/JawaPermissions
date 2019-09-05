@@ -5,26 +5,26 @@
  */
 package jawamaster.jawapermissions.commands;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.UUID;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import jawamaster.jawapermissions.JawaPermissions;
+import jawamaster.jawapermissions.PlayerDataObject;
 import jawamaster.jawapermissions.handlers.ESHandler;
+import jawamaster.jawapermissions.handlers.PlayerDataHandler;
 import jawamaster.jawapermissions.utils.ArgumentParser;
-import org.bukkit.ChatColor;
+import jawamaster.jawapermissions.utils.ESRequestBuilder;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.search.MultiSearchRequest;
 import org.elasticsearch.action.update.UpdateRequest;
+import org.json.JSONObject;
 
 /**
  *
@@ -33,14 +33,33 @@ import org.elasticsearch.action.update.UpdateRequest;
 public class unbanPlayer implements CommandExecutor {
     private String target;
     private HashMap<String, Object> playerData;
+    private PlayerDataObject pdObject;
+    private MultiSearchRequest multiSearchRequest;
+    private JSONObject topLevelBanObject;
 
     @Override
     public boolean onCommand(CommandSender commandSender, Command arg1, String arg2, String[] arg3) {
         
+        JawaPermissions.plugin.getServer().getScheduler().scheduleSyncDelayedTask(JawaPermissions.plugin, new Runnable() {
+            @Override
+            public void run() {
+                UnbanPlayer(commandSender, arg3);
+            }
+        });
+        
+        return true;
+
+    }
+    
+    public boolean UnbanPlayer(CommandSender commandSender, String[] arg3){
         String usage = "/unban -p <playername> -r <reason for unban>";
         
         HashSet<String> acceptedFlags = new HashSet(Arrays.asList("p","r","b"));
-        
+
+//###############################################################################
+// Validate command input
+//###############################################################################        
+
         //Parse the command arguments or if no arguments are sent out
         if (arg3 == null) {
             return true; //TODO see what happens when the command is run without arguments
@@ -74,15 +93,11 @@ public class unbanPlayer implements CommandExecutor {
             }
         });
         
-        //Unban will always take place with an offline user
-        try {
+//###############################################################################
+//# Assess offline status for target of unban
+//###############################################################################
             //find this mofos UUID. If it fails then target=null
             target = ESHandler.findOfflinePlayer(parsedArguments.get("p")).getId();
-        } catch (IOException ex) {
-            Logger.getLogger(unbanPlayer.class.getName()).log(Level.SEVERE, null, ex);
-            System.out.println("Something went wrong trying to find the offline player's UUID. Make sure the ElasticSearch database is running");
-            return true;
-        }
         
         if (target == null) {
             commandSender.sendMessage("Elastic Search failed to find that player's UUID! Please make sure you are using the correct username for when they were banned!");
@@ -90,62 +105,32 @@ public class unbanPlayer implements CommandExecutor {
             return true;
         }
         
-        //Now try to find the existing ban information, we need this to update the ban index
-        try { 
-            playerData = (HashMap) ESHandler.checkBanStatus(UUID.fromString(target));
-            if (playerData == null){
-                commandSender.sendMessage(ChatColor.RED + "> Error! Player: " + target + " was not found in the bans or players index!!");
-                return true;
-            }
-        } catch (IOException ex) {
-            Logger.getLogger(unbanPlayer.class.getName()).log(Level.SEVERE, null, ex);
-            commandSender.sendMessage(ChatColor.RED + "> Error! Something went wrong pulling the player data!! Check that ElasticSearch is running!!");
+//###############################################################################
+//# Get player and ban data
+//###############################################################################
+        multiSearchRequest = new MultiSearchRequest();
+        multiSearchRequest.add(ESRequestBuilder.buildSearchRequest("players", "_id", target));
+
+        pdObject = ESHandler.runMultiIndexSearch(multiSearchRequest, new PlayerDataObject(UUID.fromString(target)));
+        
+        if (!pdObject.isBanned()){
+            commandSender.sendMessage("That player isn't banned! Can't unban.");
             return true;
         }
         
         String unbanDateTime = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+
+        topLevelBanObject = PlayerDataHandler.assembleUnBanData(commandSender, parsedArguments, unbanDateTime, pdObject.getLatestBanDate());
         
-        //Assemble unban information for the ban index
-        HashMap<String, Object> banData = new HashMap();
-        banData.put("unreason", parsedArguments.get("r"));
-        banData.put("active", false);
-        
-        HashMap<String, Object> playerBanData = new HashMap();
+        JSONObject playerBanData = new JSONObject();
         playerBanData.put("banned", false);
-        
-        if (commandSender instanceof Player) {
-            banData.put("unbanned-by", ((Player) commandSender).getUniqueId().toString());
-            banData.put("unbanned-via-console", false);
-        }
-        else if (commandSender instanceof ConsoleCommandSender) {
-            //Make sure they gave a valid name and get the UUID
-            String commandSenderUUID;
-            try {
-                commandSenderUUID = ESHandler.findOfflinePlayer(parsedArguments.get("b")).getId();
-            } catch (IOException ex) {
-                Logger.getLogger(unbanPlayer.class.getName()).log(Level.SEVERE, null, ex);
-                System.out.println("Something went wrong trying to find the administrative user's UUID! Make sure the ElasticSearch database is running");
-                return true;
-            }
-            
-            if (commandSenderUUID == null) {
-                commandSender.sendMessage("Elastic Search failed to find that administrative user's UUID! Please make sure you are using the correct username and not your nickname!");
-                commandSender.sendMessage("It is also possible that multipe players were found! Be exact!");
-                return true;
-            }
-            
-            //Plug the uuid into the ban index
-            banData.put("unbanned-via-console", true);
-            banData.put("unbanned-by", commandSenderUUID);
-            banData.put("unbanned-on", unbanDateTime);
-        }
-        HashMap<String, Object> banIndexData = new HashMap();
-        banIndexData.put((String) ((HashMap<String,Object>) playerData.get("player")).get("latest-ban"), banData);
         
         //Build the bulk index request
         BulkRequest bulkRequest = new BulkRequest();
-        UpdateRequest banIndexUpdate = (new UpdateRequest()).index("bans").id(target).doc(banIndexData).docAsUpsert(true);
-        UpdateRequest playerUpdate = (new UpdateRequest()).index("players").id(target).doc(playerBanData).docAsUpsert(true);
+        
+        
+        UpdateRequest banIndexUpdate = ESRequestBuilder.updateRequestBuilder(topLevelBanObject, "bans", target, true);
+        UpdateRequest playerUpdate = ESRequestBuilder.updateRequestBuilder(playerBanData, "players", target, true);
         bulkRequest.add(playerUpdate);
         bulkRequest.add(banIndexUpdate);
         

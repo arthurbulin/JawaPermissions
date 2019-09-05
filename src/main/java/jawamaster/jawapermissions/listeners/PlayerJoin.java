@@ -9,23 +9,23 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import jawamaster.jawapermissions.JawaPermissibleBase;
 import jawamaster.jawapermissions.JawaPermissions;
+import jawamaster.jawapermissions.PlayerDataObject;
 import jawamaster.jawapermissions.handlers.ESHandler;
+import static jawamaster.jawapermissions.handlers.ESHandler.indexPlayerData;
+import jawamaster.jawapermissions.handlers.PlayerDataHandler;
+import jawamaster.jawapermissions.utils.ESRequestBuilder;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.elasticsearch.action.search.MultiSearchRequest;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  *
@@ -48,6 +48,7 @@ public class PlayerJoin implements Listener {
     public static void onPlayerJoin(PlayerJoinEvent event) throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException, IOException {
 
         Player target = event.getPlayer(); //Get player from event
+        boolean installed = ESHandler.alreadyIndexed(target.getUniqueId());
 
         //Patch the player with the permissible base
         Class ply = target.getClass().getSuperclass(); //Get the player class
@@ -55,62 +56,64 @@ public class PlayerJoin implements Listener {
         field.setAccessible(true); //Make the field accessible if it isn't already
         field.set(target, new JawaPermissibleBase(target, JawaPermissions.getPlugin())); //Set the player's perm field to the PermissibleBase
 
-        //Subscribe user to correct chat permission channels.
-        if (target.hasPermission("jawachat.opchat") || target.isOp()) {
-            Bukkit.getServer().getPluginManager().subscribeToPermission(Server.BROADCAST_CHANNEL_ADMINISTRATIVE, target);
-        }
-        Bukkit.getServer().getPluginManager().subscribeToPermission(Server.BROADCAST_CHANNEL_USERS, target);
+        //Should async update the player's data
+        Bukkit.getScheduler().runTaskAsynchronously(JawaPermissions.getPlugin(), new Runnable() {
+            @Override
+            public void run() {
+                if (installed) {
 
-        if (target.getFirstPlayed() != 0) {
-            //Should async update the player's data
-            Bukkit.getScheduler().runTaskAsynchronously(JawaPermissions.getPlugin(), new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        HashMap<String, Object> playerData = ESHandler.getPlayerData(target);
-                        HashMap<String, Object> updateData = new JSONObject();
+                    MultiSearchRequest multiSearchRequest = new MultiSearchRequest();
+                    multiSearchRequest.add(ESRequestBuilder.buildSearchRequest("players", "_id", target.getUniqueId().toString()));
+                    PlayerDataObject pdObject = ESHandler.runMultiIndexSearch(multiSearchRequest, new PlayerDataObject(target.getUniqueId()));
 
-                        Bukkit.getLogger().log(Level.FINEST, "Recording last login date for player: {0} as {1}", new Object[]{target.getUniqueId().toString(), LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)});
-                        updateData.put("last-login", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+                    System.out.print(pdObject.getRank());
+                    JawaPermissions.playerRank.put(target.getUniqueId(), pdObject.getRank());
+                    target.sendMessage("You have been loaded!");
 
-                        //update player name in the 
-                        if (!playerData.get("name").equals(target.getName())) {
-                            updateData.put("name", target.getName());
-                        }
-
-                        //Update player nameData
-                        JSONArray nameData = new JSONArray();
-
-                        //Change nameData to name-data
-                        ((Collection) playerData.get("name-data")).forEach((name) -> {
-                            System.out.print(name);
-                            nameData.add((String) name);
-                        });
-
-                        if (!nameData.contains(target.getName())) {
-                            nameData.add(target.getName());
-                            updateData.put("name-data", nameData);
-                        }
-
-                        //update player ip data (target.getAddress().getHostName())
-                        JSONArray ips = new JSONArray();
-                        ((Collection) playerData.get("ip")).forEach((ip) -> {
-                            ips.add((String) ip);
-                        });
-                        ;
-                        if (ips.contains(target.getAddress().getAddress())) {
-                            ips.add(target.getAddress().getAddress());
-                            updateData.put("ip", ips);
-                        }
-
-                        ESHandler.updateData(target, updateData);
-
-                    } catch (IOException ex) {
-                        Logger.getLogger(PlayerJoin.class.getName()).log(Level.SEVERE, null, ex);
+                    //Subscribe user to correct chat permission channels.
+                    if (target.hasPermission("jawachat.opchat") || target.isOp()) {
+                        Bukkit.getServer().getPluginManager().subscribeToPermission(Server.BROADCAST_CHANNEL_ADMINISTRATIVE, target);
                     }
+                    Bukkit.getServer().getPluginManager().subscribeToPermission(Server.BROADCAST_CHANNEL_USERS, target);
+
+                    JSONObject updateData = new JSONObject();
+
+                    Bukkit.getLogger().log(Level.FINEST, "Recording last login date for player: {0} as {1}", new Object[]{target.getUniqueId().toString(), LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)});
+                    updateData.put("last-login", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+
+
+                    //update player name and ip
+                    if (pdObject.getName().equals(target.getName())) {
+                        updateData.put("name", target.getName());
+                    }
+                    if (!pdObject.getIP().equals(target.getAddress().getAddress().toString())) {
+                        updateData.put("ip", target.getAddress().getAddress().toString());
+                    }
+
+                    JSONArray nameData = PlayerDataHandler.nameData(target.getName(), pdObject.getNameArray());
+                    System.out.print("player join:" + nameData);
+                    if (nameData != null) {
+                        System.out.println("isn't null:"+nameData);
+                        updateData.put("name-data", nameData);
+                    }
+
+                    JSONArray ips = PlayerDataHandler.ipData(target.getAddress().getAddress().toString(), pdObject.getIPArray());
+                    if (ips != null) {
+                        updateData.put("ips", ips);
+                    }
+
+                    ESHandler.updateData(target, updateData);
+
+                } else { //if user isn't installed this is a new user. install them
+                    JSONObject newPlayerData = PlayerDataHandler.firstTimePlayer(target.getName(), target.getAddress().getAddress().toString());
+
+                    indexPlayerData(target.getUniqueId(), newPlayerData);
+                    JawaPermissions.playerRank.put(target.getUniqueId(), (String) newPlayerData.get("rank"));
+                    target.sendMessage("You have been installed!");
+
                 }
-            });
-        }
+            }
+        });
 
     }
 

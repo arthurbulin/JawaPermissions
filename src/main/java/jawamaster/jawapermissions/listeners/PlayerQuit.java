@@ -15,6 +15,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.json.JSONObject;
 
 /**
  *
@@ -30,7 +31,7 @@ public class PlayerQuit implements Listener {
              @Override
             public void run() {
                 
-                HashMap<String, Object> logoutUpdate = new HashMap();
+                 JSONObject logoutUpdate = new JSONObject();
                 logoutUpdate.put("last-logout", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
                  ESHandler.updateData(player, logoutUpdate);
                  if (JawaPermissions.debug) System.out.println(JawaPermissions.pluginSlug + "[PlayerQuitEvent] updating " + player.getName() + "'s last logout time.");

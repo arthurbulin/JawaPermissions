@@ -14,8 +14,12 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import jawamaster.jawapermissions.JawaPermissions;
+import jawamaster.jawapermissions.PlayerDataObject;
 import jawamaster.jawapermissions.events.PlayerRankChange;
+import jawamaster.jawapermissions.utils.ESRequestBuilder;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Server;
@@ -28,20 +32,21 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.MultiSearchRequest;
+import org.elasticsearch.action.search.MultiSearchResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
+import org.json.JSONObject;
 
 /**
  *
@@ -52,13 +57,13 @@ public class ESHandler {
     public static RestHighLevelClient restClient;
 
     public JawaPermissions plugin;
-    static Map<String, Object> response;
-    public static Map<String, Object> dataMap;
-    public static GetRequest getRequest;
-    public static IndexRequest indexRequest;
-    public static SearchRequest searchRequest;
-    public static SearchSourceBuilder searchSourceBuilder;
-    public static SearchHits searchHits;
+//    static Map<String, Object> response;
+//    public static Map<String, Object> dataMap;
+//    public static GetRequest getRequest;
+//    public static IndexRequest indexRequest;
+//    public static SearchRequest searchRequest;
+//    public static SearchSourceBuilder searchSourceBuilder;
+//    public static SearchHits searchHits;
 
     private final static String handlerSlug = "[ESHandler] ";
     private static boolean notInES = false;
@@ -69,6 +74,20 @@ public class ESHandler {
     public ESHandler(JawaPermissions plugin) {
         this.plugin = plugin;
         ESHandler.restClient = JawaPermissions.getESClient();
+    }
+    
+    public static boolean alreadyIndexed(UUID target) {
+        GetRequest getRequest = new GetRequest("players", target.toString());
+        getRequest.fetchSourceContext(new FetchSourceContext(false));
+        getRequest.storedFields("_none_");
+        
+        try {
+            return restClient.exists(getRequest, RequestOptions.DEFAULT);
+        } catch (IOException ex) {
+            Logger.getLogger(ESHandler.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("CHECK ELASTIC SEARCH!!");
+            return false;
+        }
     }
 
 //*****************Index CALLS*******************
@@ -82,11 +101,11 @@ public class ESHandler {
      * @param playerData
      * @return
      */
-    public static boolean indexPlayerData(UUID target, Map<String, Object> playerData) {
+    public static boolean indexPlayerData(UUID target, JSONObject playerData) {
         //indexRequest = new IndexRequest("mc", "players", target.toString()).source(playerData);
-        indexRequest = new IndexRequest("players")
+        IndexRequest indexRequest = new IndexRequest("players")
                 .id(target.toString())
-                .source(playerData);
+                .source(playerData.toMap());
         restClient.indexAsync(indexRequest, RequestOptions.DEFAULT, new ActionListener<IndexResponse>() {
             @Override
             public void onResponse(IndexResponse indexResponse) {
@@ -106,43 +125,43 @@ public class ESHandler {
     }
 
 //*****************Update CALLS*******************
-    public static void setPlayerRank(CommandSender commandSender, Player target, String rank) {
-        Map<String, Object> jsonMap = new HashMap();
-        jsonMap.put("rank", rank);
+//    public static void setPlayerRank(CommandSender commandSender, Player target, String rank) {
+//        Map<String, Object> jsonMap = new HashMap();
+//        jsonMap.put("rank", rank);
+//
+//        //UpdateRequest updateRequest = new UpdateRequest("mc", "players", target.getUniqueId().toString()).doc(jsonMap);
+//        UpdateRequest updateRequest = new UpdateRequest("players", target.getUniqueId().toString()).doc(jsonMap, XContentType.JSON);
+//
+//        restClient.updateAsync(updateRequest, RequestOptions.DEFAULT, new ActionListener<UpdateResponse>() {
+//            @Override
+//            public void onResponse(UpdateResponse updateResponse) {
+//                Bukkit.getServer().broadcastMessage(ChatColor.DARK_GREEN + JawaPermissions.pluginSlug + target.getDisplayName() + "'s rank has been set to " + rank);
+//
+//                //Cache the player rank
+//                JawaPermissions.playerRank.put(target.getUniqueId(), rank);
+//
+//                //Resubscribe to proper channels, but this doesnt unsubscribe them, they need to relog for that
+//                if (target.hasPermission("jawachat.opchat") || target.isOp()) {
+//                    Bukkit.getServer().getPluginManager().subscribeToPermission(Server.BROADCAST_CHANNEL_ADMINISTRATIVE, target);
+//                }
+//                Bukkit.getServer().getPluginManager().subscribeToPermission(Server.BROADCAST_CHANNEL_USERS, target);
+//
+//                //Call event for rank change
+//                JawaPermissions.getPlugin().getServer().getPluginManager().callEvent(new PlayerRankChange(target, rank));
+//            }
+//
+//            @Override
+//            public void onFailure(Exception e) {
+//                System.out.println(e);
+//                e.printStackTrace();
+//            }
+//        });
+//
+//    }
 
-        //UpdateRequest updateRequest = new UpdateRequest("mc", "players", target.getUniqueId().toString()).doc(jsonMap);
-        UpdateRequest updateRequest = new UpdateRequest("players", target.getUniqueId().toString()).doc(jsonMap, XContentType.JSON);
-
-        restClient.updateAsync(updateRequest, RequestOptions.DEFAULT, new ActionListener<UpdateResponse>() {
-            @Override
-            public void onResponse(UpdateResponse updateResponse) {
-                Bukkit.getServer().broadcastMessage(ChatColor.DARK_GREEN + JawaPermissions.pluginSlug + target.getDisplayName() + "'s rank has been set to " + rank);
-
-                //Cache the player rank
-                JawaPermissions.playerRank.put(target.getUniqueId(), rank);
-
-                //Resubscribe to proper channels, but this doesnt unsubscribe them, they need to relog for that
-                if (target.hasPermission("jawachat.opchat") || target.isOp()) {
-                    Bukkit.getServer().getPluginManager().subscribeToPermission(Server.BROADCAST_CHANNEL_ADMINISTRATIVE, target);
-                }
-                Bukkit.getServer().getPluginManager().subscribeToPermission(Server.BROADCAST_CHANNEL_USERS, target);
-
-                //Call event for rank change
-                JawaPermissions.getPlugin().getServer().getPluginManager().callEvent(new PlayerRankChange(target, rank));
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                System.out.println(e);
-                e.printStackTrace();
-            }
-        });
-
-    }
-
-    public static void updateData(Player target, HashMap updateData) {
+    public static void updateData(Player target, JSONObject updateData) {
         UpdateRequest updateRequest = new UpdateRequest("players", target.getUniqueId().toString())
-                .doc(updateData);
+                .doc(updateData.toMap());
 
         restClient.updateAsync(updateRequest, RequestOptions.DEFAULT, new ActionListener<UpdateResponse>() {
             @Override
@@ -158,218 +177,63 @@ public class ESHandler {
         });
     }
 
-//###########################  BAN METHODS   ########################################
-    /**
-     * Will check the player's ban status and return the player's ban data if
-     * the player is currently banned.
-     *
-     * @param target
-     * @return
-     * @throws java.io.IOException
-     */
-    public static Map<String, Object> checkBanStatus(UUID target) throws IOException {
-        //TODO Clean this mess up
-        //TODO Convert all to MultiGetRequest
-        searchRequest = new SearchRequest("players");
-        searchSourceBuilder = new SearchSourceBuilder();
-
-        searchSourceBuilder.query(QueryBuilders.matchQuery("_id", target.toString()));
-        searchRequest.source(searchSourceBuilder);
-
-        SearchResponse searchResponse = restClient.search(searchRequest, RequestOptions.DEFAULT);
-
-        SearchHits hits = searchResponse.getHits();
-        SearchHit[] hitsl = hits.getHits();
-        Long numHits = hits.getTotalHits().value;
-
-        boolean isBanned = (boolean) hitsl[0].getSourceAsMap().get("banned");
-        Map<String, Object> returnObj = new HashMap();
-        if (isBanned) {
-            SearchRequest bannedSearchRequest = new SearchRequest("bans");
-            searchSourceBuilder = new SearchSourceBuilder();
-
-            searchSourceBuilder.query(QueryBuilders.matchQuery("_id", target.toString()));
-            bannedSearchRequest.source(searchSourceBuilder);
-
-            SearchResponse bannedSearchResponse = restClient.search(bannedSearchRequest, RequestOptions.DEFAULT);
-
-            SearchHit[] bannedHits = bannedSearchResponse.getHits().getHits();
-            returnObj.put("bans", bannedHits[0].getSourceAsMap());
-        }
-
-        returnObj.put("player", hitsl[0].getSourceAsMap());
-
-        //TODO resolve timed bans
-        //This will return all of the player data, but the ban data is all contained there! with the keys banned, current-ban, and previous-bans
-        if (numHits == 1) {
-            return returnObj;
-        } else {
-            return null;
-        }
-
-    }
-    
-    
-
-    /**
-     * Updates a player's ban data allowing reason and length of ban time to be
-     * modified.
-     *
-     * @param commandSender
-     * @param target
-     * @param reason
-     * @param time
-     * @return
-     * @throws IOException
-     */
-    public static Map<String, Object> updateBan(CommandSender commandSender, UUID target, String reason, String time) throws IOException {
-        Map<String, Object> newBanData = new HashMap();
-        LocalDateTime endOfBan = PlayerDataHandler.assessBanTime(time);
-
-        //newBanData.put("banned-by", commandSender.getName());
-        newBanData.put("updated", LocalDateTime.now());
-        newBanData.put("reason", reason);
-        newBanData.put("end-of-ban", endOfBan);
-
-        //Use the dataMap generic map. I am unsure but i belive this will help with GC
-        dataMap = new HashMap();
-
-        dataMap.put("current-ban", newBanData);
-        dataMap.put("banned", true);
-
-        //REMCOM: TODO Remove the commented old line
-        //UpdateRequest updateRequest = new UpdateRequest("mc", "players", target.toString()).doc(dataMap);
-        UpdateRequest updateRequest = new UpdateRequest("players", target.toString()).doc(dataMap);
-        restClient.update(updateRequest, RequestOptions.DEFAULT);
-
-        return newBanData;
-
-    }
-
-    /**
-     * Update the player's ban information then call for the ban to be removed
-     * from the server ban uuid list.
-     *
-     * @param target
-     * @param commandSender
-     * @param playerBanData
-     * @param action
-     * @throws IOException
-     */
-    public static void unbanPlayer(UUID target, CommandSender commandSender, Map<String, Object> playerBanData, int action) throws IOException {
-        //TODO Resolve automated unban functions
-        UpdateRequest updateRequest;
-        //System.out.println("old ban data");
-        //Create a holder for the old ban data we are about to wipe out
-        Map<String, Object> oldBanData = (Map<String, Object>) playerBanData.get("current-ban");
-
-        //Create a holder for the data that will overwrite the old data
-        Map<String, Object> newBanData = new HashMap();
-
-        //Creat a hash set to hold the pervious ban data
-        Set<Object> previousBans;
-        if (playerBanData.containsKey("previous-bans")) { //If the player already has previous ban data on file load it
-            previousBans = new HashSet((Collection) playerBanData.get("previous-bans"));
-        } else {
-            previousBans = new HashSet();
-        }
-
-        //Add the old ban data to the previous bans set
-        previousBans.add(oldBanData);
-        //Add the previous bans to new data map
-        newBanData.put("previous-bans", previousBans);
-        newBanData.put("banned", false);
-
-        //Generate our update request
-        //REMCOM TODO Remove old comment
-        //updateRequest = new UpdateRequest("mc", "players", target.toString()).doc(newBanData);
-        updateRequest = new UpdateRequest("players", target.toString()).doc(newBanData);
-        UpdateResponse updateResponse = restClient.update(updateRequest, RequestOptions.DEFAULT);
-
-    }
-    
-//    public static void executeAsyncBulkRequest(HashSet requests){
-//        BulkRequest bulkRequest = new BulkRequest();
-//        bulkRequest.add(requests);
-//        
-//        restClient.bulkAsync(bulkRequest, RequestOptions.DEFAULT, new ActionListener<BulkResponse>() {
-//            @Override
-//            public void onResponse(BulkResponse arg0) {
-//                
-//            }
+////###########################  BAN METHODS   ########################################
+//    /**
+//     * Will check the player's ban status and return the player's ban data if
+//     * the player is currently banned.
+//     *
+//     * @param target
+//     * @return
+//     * @throws java.io.IOException
+//     */
+//    public static Map<String, Object> checkBanStatus(UUID target) throws IOException {
+//        //TODO Clean this mess up
+//        //TODO Convert all to MultiGetRequest
+//        SearchRequest searchRequest = new SearchRequest("players");
+//        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
 //
-//            @Override
-//            public void onFailure(Exception arg0) {
-//                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-//            }
-//        });
+//        searchSourceBuilder.query(QueryBuilders.matchQuery("_id", target.toString()));
+//        searchRequest.source(searchSourceBuilder);
+//
+//        SearchResponse searchResponse = restClient.search(searchRequest, RequestOptions.DEFAULT);
+//
+//        SearchHits hits = searchResponse.getHits();
+//        SearchHit[] hitsl = hits.getHits();
+//        Long numHits = hits.getTotalHits().value;
+//
+//        boolean isBanned = (boolean) hitsl[0].getSourceAsMap().get("banned");
+//        Map<String, Object> returnObj = new HashMap();
+//        if (isBanned) {
+//            SearchRequest bannedSearchRequest = new SearchRequest("bans");
+//            searchSourceBuilder = new SearchSourceBuilder();
+//
+//            searchSourceBuilder.query(QueryBuilders.matchQuery("_id", target.toString()));
+//            bannedSearchRequest.source(searchSourceBuilder);
+//
+//            SearchResponse bannedSearchResponse = restClient.search(bannedSearchRequest, RequestOptions.DEFAULT);
+//
+//            SearchHit[] bannedHits = bannedSearchResponse.getHits().getHits();
+//            returnObj.put("bans", bannedHits[0].getSourceAsMap());
+//        }
+//
+//        returnObj.put("player", hitsl[0].getSourceAsMap());
+//
+//        //TODO resolve timed bans
+//        //This will return all of the player data, but the ban data is all contained there! with the keys banned, current-ban, and previous-bans
+//        if (numHits == 1) {
+//            return returnObj;
+//        } else {
+//            return null;
+//        }
+//
 //    }
     
-    public static void banIndexUpdate(UUID target, HashMap<String,Object> banIndex){
-        BulkRequest bulkRequest = new BulkRequest();
-        UpdateRequest updateRequest = new UpdateRequest();
-        
-        String banTime = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME); //Ban time becomes the specific identifier for that object in the ban index
-        
-        HashMap<String, Object> banData = new HashMap();
-        banData.put(banTime, banIndex);
-        
-        updateRequest
-                .index("bans")
-                .id(target.toString())
-                .doc(banData)
-                .docAsUpsert(true); //Upsert so we create if it doesnt exist        
-
-        HashMap<String,Object> playerData = new HashMap();
-        
-        playerData.put("banned", true);
-        playerData.put("latest-ban", banTime); //Create this so we link back to the latest ban in the index
-        
-        UpdateRequest playerDataUpdate = new UpdateRequest();
-        
-        playerDataUpdate
-                .index("players")
-                .id(target.toString())
-                .doc(playerData)
-                .docAsUpsert(true);
-
-        bulkRequest.add(updateRequest);
-        bulkRequest.add(playerDataUpdate);
-        
-        restClient.bulkAsync(bulkRequest, RequestOptions.DEFAULT, new ActionListener<BulkResponse>() {
-            @Override
-            public void onResponse(BulkResponse arg0) {
-                for (BulkItemResponse res : arg0.getItems()){
-                    System.out.println(res.getFailure());
-                    System.out.println(res.getFailureMessage());
-
-                }
-                System.out.println(target + " has had ban data entered in the ban index.");
-                System.out.println(target + " has been marked as banned in the player index.");
-            }
-
-            @Override
-            public void onFailure(Exception arg0) {
-                arg0.printStackTrace();
-                System.out.println("Fuck bulk request failed.");
-            }
-        });
-        
-    }
-    
-    public static void unbanIndexUpdate(UUID target, HashMap<String,Object> banData){
-        BulkRequest bulkRequest = new BulkRequest();
-        UpdateRequest updateRequest = new UpdateRequest();
-        updateRequest
-                .id(target.toString())
-                .index("bans")
-                .doc(banData)
-                .docAsUpsert(true);
-        
-        HashMap<String, Object> playerData = new HashMap();
-        playerData.put("banned", false);
-    }
-    
+    /** This will run and Async bulk request and print generic indexing success or failure messages to the commandSender.
+     * TODO later this will accept a message object so that good response can be sent to the players and server without 
+     * having to overload the hell out of the call.
+     * @param request
+     * @param messageToo 
+     */
     public static void runAsyncBulkRequest(BulkRequest request, CommandSender messageToo){
         restClient.bulkAsync(request, RequestOptions.DEFAULT, new ActionListener<BulkResponse>() {
             @Override
@@ -387,24 +251,36 @@ public class ESHandler {
 
             @Override
             public void onFailure(Exception arg0) {
-                System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Something sever happend in runAsyncBulkRequest!!");
+                System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Something severe happend in runAsyncBulkRequest!!");
                 System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Exception:");
-                arg0.printStackTrace();
+                Logger.getLogger(ESHandler.class.getName()).log(Level.SEVERE, null, arg0);
             }
         });
     }
+    
+    public static PlayerDataObject runMultiIndexSearch(MultiSearchRequest multiSearchRequest, PlayerDataObject pdObject) {
+
+        try {
+            MultiSearchResponse mSResponse = restClient.msearch(multiSearchRequest, RequestOptions.DEFAULT);
+            for (MultiSearchResponse.Item resp : mSResponse.getResponses()) {
+                //if it isnt a failure add it
+                if (!resp.isFailure() && (resp.getResponse().getHits().getHits().length == 1)) {
+                    pdObject.addSearchData(resp.getResponse().getHits().getHits()[0].getIndex(), resp.getResponse().getHits().getHits()[0].getSourceAsMap());
+                }
+            }
+        } catch (IOException ex) {
+            System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Something severe happend in runMultiIndexSearch!!");
+            System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Exception:");
+            Logger.getLogger(ESHandler.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return pdObject;
+    }
 
     public static void whoLookUp(CommandSender commandSender, Player target) throws IOException {
-        searchRequest = new SearchRequest("players");
-        searchSourceBuilder = new SearchSourceBuilder();
-
-        searchSourceBuilder.query(QueryBuilders.matchQuery("_id", target.getUniqueId().toString()));
-        searchRequest.source(searchSourceBuilder);
-
         //System.out.println("test");
-        SearchResponse searchResponse = restClient.search(searchRequest, RequestOptions.DEFAULT);
+        SearchResponse searchResponse = restClient.search(ESRequestBuilder.buildSearchRequest("players", "_id", target.getUniqueId().toString()), RequestOptions.DEFAULT);
 
-        searchHits = searchResponse.getHits();
+        SearchHits searchHits = searchResponse.getHits();
         SearchHit[] hits = searchHits.getHits();
         //long totalHits = searchHits.totalHits;
 
@@ -420,47 +296,74 @@ public class ESHandler {
         }
 
     }
-
-    public static HashMap getPlayerData(Player target) throws IOException {
-        searchRequest = new SearchRequest("players");
-        searchSourceBuilder = new SearchSourceBuilder();
-
-        searchSourceBuilder.query(QueryBuilders.matchQuery("_id", target.getUniqueId().toString()));
-        searchRequest.source(searchSourceBuilder);
-
-        SearchResponse searchResponse = restClient.search(searchRequest, RequestOptions.DEFAULT);
-
-        searchHits = searchResponse.getHits();
-        SearchHit[] hits = searchHits.getHits();
-
-        return (HashMap<String, Object>) hits[0].getSourceAsMap();
-    }
     
+    /** This allows a findOfflinePlayer call that moves player existence checking to this method.
+     * This method is backed by findOfflinePlayer(String target).
+     * @param target
+     * @param commandSender
+     * @return 
+     */
+    public static SearchHit findOfflinePlayer(String target, CommandSender commandSender){
+        SearchHit hits = findOfflinePlayer(target);
+        if (hits == null){
+            commandSender.sendMessage("That target player was not found the Elastic Database. Please be sure to use the exact minecraft name and not their nickname!");
+            return null;
+        } else {
+            return hits;
+        }
+    }
     /** Will return the UUID of an offline player
      * @param target
-     * @return
-     * @throws IOException 
+     * @return 
      */
-    public static SearchHit findOfflinePlayer(String target) throws IOException{
-        SearchRequest playerSearchRequest = new SearchRequest();
-        SearchSourceBuilder playerSearchSourceBuilder = new SearchSourceBuilder();
-        
-        playerSearchSourceBuilder.query(QueryBuilders.matchQuery("name", target));
-        playerSearchRequest.source(playerSearchSourceBuilder);
-        
-        SearchResponse playerSearchResponse = restClient.search(playerSearchRequest, RequestOptions.DEFAULT);
-        
-        if (JawaPermissions.debug) System.out.print(JawaPermissions.pluginSlug + handlerSlug + " Search Response: " + playerSearchResponse);
-        SearchHit[] hits = playerSearchResponse.getHits().getHits();
-        if (JawaPermissions.debug) {
-            System.out.println(JawaPermissions.pluginSlug + handlerSlug + " Hits Length: " + hits.length);
-            System.out.println(JawaPermissions.pluginSlug + handlerSlug + " Hits: ");
-            System.out.println(JawaPermissions.pluginSlug + handlerSlug + " return: " + hits[0]);
+    public static SearchHit findOfflinePlayer(String target) {
+        try {
+            SearchRequest playerSearchRequest = new SearchRequest("players");
+            SearchSourceBuilder playerSearchSourceBuilder = new SearchSourceBuilder();
+            
+            playerSearchSourceBuilder.query(QueryBuilders.matchQuery("name", target));
+            playerSearchRequest.source(playerSearchSourceBuilder);
+            
+            SearchResponse playerSearchResponse = restClient.search(playerSearchRequest, RequestOptions.DEFAULT);
+            
+            if (JawaPermissions.debug) System.out.print(JawaPermissions.pluginSlug + handlerSlug + " Search Response: " + playerSearchResponse);
+            SearchHit[] hits = playerSearchResponse.getHits().getHits();
+            if (hits.length != 1) return null;
+            
+            return hits[0];
+        } catch (IOException ex) {
+            Logger.getLogger(ESHandler.class.getName()).log(Level.SEVERE, null, ex);
+            return null;
         }
-        if (hits.length != 1) return null;
-        
-        return hits[0];
 
     }
+    
+    /**
+     * This will return a PlayerDataObject containing all user data. If the
+     * player is not found this will return null
+     * @param ident
+     * @param getData
+     * @return
+     */
+    public static PlayerDataObject findOfflinePlayer(String ident, boolean getData) {
+        PlayerDataObject pdObject;
+        if (getData) {
+            try {
+                SearchResponse sResponse = restClient.search(ESRequestBuilder.buildSearchRequest("players", "name", ident), RequestOptions.DEFAULT);
+                SearchHit[] hits = sResponse.getHits().getHits();
+                pdObject = new PlayerDataObject(UUID.fromString(hits[0].getId()));
+                pdObject.addPlayerData(hits[0].getSourceAsMap());
+            } catch (IOException ex) {
+                Logger.getLogger(ESHandler.class.getName()).log(Level.SEVERE, null, ex);
+                return null;
+            }
 
+        } else {
+            SearchHit hit = findOfflinePlayer(ident);
+            pdObject = new PlayerDataObject(UUID.fromString(hit.getId()));
+            pdObject.addPlayerData(findOfflinePlayer(ident).getSourceAsMap());
+        }
+        return pdObject;
+
+    }
 }

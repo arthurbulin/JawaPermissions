@@ -4,3 +4,4 @@ esport: 9200
 default-world: world
 debug: false
 new-player-message: "You have been successfully Indexed"
+unsecured: true

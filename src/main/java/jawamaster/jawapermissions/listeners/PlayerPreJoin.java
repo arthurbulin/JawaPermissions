@@ -6,70 +6,48 @@
 package jawamaster.jawapermissions.listeners;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
 import java.util.Map;
-import jawamaster.jawapermissions.JawaPermissions;
+import jawamaster.jawapermissions.PlayerDataObject;
 import jawamaster.jawapermissions.handlers.ESHandler;
-import static jawamaster.jawapermissions.handlers.ESHandler.indexPlayerData;
-import jawamaster.jawapermissions.handlers.PlayerDataHandler;
+import jawamaster.jawapermissions.utils.ESRequestBuilder;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
-import org.json.simple.JSONObject;
+import org.elasticsearch.action.search.MultiSearchRequest;
 
 /**
  *
  * @author Arthur Bulin
  */
 public class PlayerPreJoin implements Listener {
-
-    /* THis is a testing listener. It is an attempt to load the player data and make changes as the player is joining.
-    * This will hopefully allow more to done as this is an asynch event. So the server will not be helpd up as the DB is queried and updated.
-     */
+    
     @EventHandler
     public static void onPlayerJoin(AsyncPlayerPreLoginEvent event) throws IllegalArgumentException, IllegalAccessException, IOException {
         //Check user ban status and retreive the user info
-        Map<String, Object> playerRawData = ESHandler.checkBanStatus(event.getUniqueId());
-        HashMap<String, HashMap> bans = (HashMap) playerRawData.get("bans");
-        HashMap<String, String> playerData = (HashMap) playerRawData.get("player");
-        if (JawaPermissions.debug) System.out.println(JawaPermissions.pluginSlug + "[PlayerPreJoin] playerData: " + playerData);
+        MultiSearchRequest multiSearchRequest = new MultiSearchRequest();
+        multiSearchRequest.add(ESRequestBuilder.buildSearchRequest("players", "_id", event.getUniqueId().toString()));
+        multiSearchRequest.add(ESRequestBuilder.buildSearchRequest("bans", "_id", event.getUniqueId().toString()));
+        PlayerDataObject rawSearchData = ESHandler.runMultiIndexSearch(multiSearchRequest,new PlayerDataObject(event.getUniqueId()));
+        
+        //if (JawaPermissions.debug) System.out.println(JawaPermissions.pluginSlug + "[PlayerPreJoin] playerData: " + playerData);
 
-        if (!(playerData == null)) { //If data isnt null
+        if (rawSearchData.containsPlayerData()) { //If data isnt null
             
             //If a user is banned
-            if (Boolean.valueOf(String.valueOf(playerData.get("banned")))) { //If user is banned disallow joining and end the event
+            //Below has some stupid converting bullshit because ElasticSearch returns Objects instead of their string type
+            if (rawSearchData.isBanned()) { //If user is banned disallow joining and end the event
 
+                String bannedUntil = rawSearchData.getBannedUntil(rawSearchData.getLatestBanDate());
+                
                 String message = "You have been banned for: "
-                        + ((HashMap<String,String>) bans.get(playerData.get("latest-ban"))).get("reason").trim();
-                if (!"forever".equals(((HashMap<String,String>) bans.get(playerData.get("latest-ban"))).get("banned-until"))) {
-                    message += ". This ban will end on: ";
+                        + rawSearchData.getBanReason(rawSearchData.getLatestBanDate());
+                if (!"forever".equals(bannedUntil)) {
+                    //message += ". This ban will end on: " + TimeParser.getHumanReadableDateTime();
+                    //TODO FIXME give ban end dates
                         //+ LocalDateTime.parse(((CharSequence) (((Map<String, Object>) playerData.get("current-ban"))).get("end-of-ban"))).format(DateTimeFormatter.ISO_DATE_TIME);
                 }
-                       
-
-                event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, message);
-
-            
-            //If a user isn't banned       
-            } else { //If user isnt banned load their data adjust for changes
-
-                //Load player data into the rank system
-                JawaPermissions.playerRank.put(event.getUniqueId(), (String) playerData.get("rank"));
-
-            }
-
-            //If player data is null treat as a new player    
-        } else { //if user data is null. So is a new user.
-            playerRawData = PlayerDataHandler.firstTimePlayer(event.getName(), event.getAddress().getHostAddress());
-
-            indexPlayerData(event.getUniqueId(), playerRawData);
-            JawaPermissions.playerRank.put(event.getUniqueId(), (String) playerRawData.get("rank"));
-
-        }
-
-        //Call player data update
+                event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, message);   
+            }     
+        } 
     }
-
 }
