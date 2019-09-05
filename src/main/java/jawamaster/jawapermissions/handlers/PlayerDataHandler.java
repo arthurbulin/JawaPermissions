@@ -8,12 +8,12 @@ package jawamaster.jawapermissions.handlers;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 import jawamaster.jawapermissions.JawaPermissions;
 import org.bukkit.command.CommandSender;
-import org.json.simple.JSONArray;
+import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.entity.Player;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  *
@@ -27,28 +27,29 @@ public class PlayerDataHandler {
         this.plugin = plugin;
     }
     
-    /** Creates the player data for commiting to the ElasticSearch index.
+    /** Creates the player data for committing to the ElasticSearch index.
      * @param name
      * @param ip
      * @return
      */
-    public static HashMap<String, Object> firstTimePlayer(String name, String ip){
-        HashMap<String, Object> playerData = new HashMap();
+    public static JSONObject firstTimePlayer(String name, String ip){
+        JSONObject playerData = new JSONObject();
         playerData.put("first-login", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         playerData.put("last-login", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         playerData.put("last-logout", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         playerData.put("play-time", 0);
         
         playerData.put("name", name);
-        playerData.put("name-data", (new JSONArray()).add(name) );
+        playerData.put("name-data", nameData(name, new JSONArray()));
         playerData.put("rank", "guest"); //TODO pull basic rank from permissions files and immunity levels
         
         playerData.put("banned", false);
-        playerData.put("nick", new HashMap());
+        playerData.put("nick", "");
+        playerData.put("nick-data", new JSONArray());
         playerData.put("tag", "false");
-        playerData.put("star", new HashMap());
-        
-        playerData.put("ip",(new JSONArray()).add(ip));
+        playerData.put("star", starData(new JSONObject(), "new"));
+        playerData.put("ip", ip);
+        playerData.put("ips",ipData(ip, new JSONArray()));
 
         if (JawaPermissions.debug){
             System.out.print(JawaPermissions.pluginSlug + handlerSlug + "firstTimePlayer data created as follows: " + playerData.toString());
@@ -57,61 +58,107 @@ public class PlayerDataHandler {
         return playerData;
     }
     
-    public static Map<String, Object> assembleBanData(CommandSender commandSender, String name, String reason, String endOfBan){
-        
-        Map<String, Object> banData = new HashMap();
-        LocalDateTime endOfBanDate = assessBanTime(endOfBan);
-        System.out.println(JawaPermissions.pluginSlug + " end of ban date" + endOfBanDate);
+    /** Assemble a JSONObject that contains information for that specific ban and returns it in a top level ban object.
+     * @param commandSender
+     * @param parsedArguments
+     * @param banTime
+     * @return
+     */
+    public static JSONObject assembleBanData(CommandSender commandSender, HashMap<String,String> parsedArguments, LocalDateTime banTime){
+        JSONObject topLevelBanObject = new JSONObject();
+        JSONObject banData = new JSONObject();
+        String endOfBanDate = assessBanTime(parsedArguments, banTime);
+               
+        banData.put("reason", parsedArguments.get("r"));
        
-        banData.put("reason", reason);
-       
-        banData.put("banned-by", commandSender.getName());
-        banData.put("player", name);
+        if (commandSender instanceof Player){
+            banData.put("banned-by", ((Player) commandSender).getUniqueId());
+            banData.put("via-console", false);
+        } else {
+            System.out.println("by argument: " + parsedArguments.get("b"));
+            String adminUUID = ESHandler.findOfflinePlayer((String) parsedArguments.get("b")).getId();
+            System.out.println("adminUUID: "+ adminUUID);
+            if (adminUUID == null) return null;
+            
+            banData.put("banned-by", adminUUID);
+            banData.put("via-console", true);
+        }
         
-        banData.put("end-of-ban", endOfBanDate);
-        banData.put("date", LocalDateTime.now());
+        
+        banData.put("banned-until", endOfBanDate);
+        //banData.put("latest-ban", banTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         
         banData.put("active", true);
         banData.put("ban-lock", false);
         
-        return banData;
+        topLevelBanObject.put(banTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME), banData);
+        return topLevelBanObject;
     }
     
-    public static LocalDateTime assessBanTime(String time){
-        time = time.toLowerCase();
-        Long formatted;
-        if (time.endsWith("d")){
-            formatted = Long.valueOf( time.substring(0,time.length()-1));
-            return LocalDateTime.now().plusDays(formatted);
-            
-        } else if (time.endsWith("h")){
-            formatted = Long.valueOf(time.substring(0, time.length()-1));
-            return LocalDateTime.now().plusHours(formatted);
-            
-        } else if (time.endsWith("w")){
-            formatted = Long.valueOf(time.substring(0, time.length()-1));
-            return LocalDateTime.now().plusWeeks(formatted);
-            
-        } else if (time.endsWith("y")){
-            formatted = Long.valueOf(time.substring(0, time.length()-1));
-            return LocalDateTime.now().plusYears(formatted);
-            
-        } else {
-            return LocalDateTime.now().plusYears(20);
-//            return LocalDateTime.MAX;
+    public static JSONObject assembleUnBanData(CommandSender commandSender, HashMap<String, String> parsedArguments, String unBanTime, String banTime){
+        //Assemble unban information for the ban index
+        JSONObject banData = new JSONObject();
+        JSONObject topLevelBanObject = new JSONObject();
+        banData.put("unreason", parsedArguments.get("r"));
+        banData.put("active", false);
+
+        if (commandSender instanceof Player) {
+            banData.put("unbanned-by", ((Player) commandSender).getUniqueId().toString());
+            banData.put("unbanned-via-console", false);
         }
-        
+        else if (commandSender instanceof ConsoleCommandSender) {
+            //Make sure they gave a valid name and get the UUID
+            String commandSenderUUID;
+            commandSenderUUID = ESHandler.findOfflinePlayer(parsedArguments.get("b")).getId();
+            
+            if (commandSenderUUID == null) {
+                commandSender.sendMessage("Elastic Search failed to find that administrative user's UUID! Please make sure you are using the correct username and not your nickname!");
+                commandSender.sendMessage("It is also possible that multipe players were found! Be exact!");
+                return null;
+            }
+            
+            //Plug the uuid into the ban index
+            banData.put("unbanned-via-console", true);
+            banData.put("unbanned-by", commandSenderUUID);
+            banData.put("unbanned-on", unBanTime);
+        }
+        topLevelBanObject.put(banTime, banData);
+        return topLevelBanObject;
     }
     
-    /** *  Determine if an ip address is contained within the player's history set.
-     * If it isn't then add it and return it. If it is already in the set then 
-     * return null.
+    /** Evaluates ban time and creates a string representing it in LocalDateTime format.
+     * If ban has no end date then string is "forever".
+     * @param time
+     * @param dateTime
+     * @return 
+     */
+    public static String assessBanTime(HashMap<String,String> time,LocalDateTime dateTime) {
+        LocalDateTime adjustedDateTime = dateTime;
+        if (time.containsKey("d") || time.containsKey("h") || time.containsKey("m")) {
+            if (time.containsKey("d")) {
+                adjustedDateTime.plusDays(Long.valueOf(time.get("d")));
+            }
+            if (time.containsKey("h")) {
+                adjustedDateTime.plusHours(Long.valueOf(time.get("h")));
+            }
+            if (time.containsKey("m")) {
+                adjustedDateTime.plusMinutes(Long.valueOf(time.get("m")));
+            }
+            return adjustedDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        } else {
+            return "forever";
+        }  
+    }
+    
+    /** *  Determine if an ip address is contained within the player's history set.If it isn't then add it and return it.
+     * If it is already in the array then return null.
      * @param ipAddress
+     * @param ipData
      * @return 
      */
     public static JSONArray ipData(String ipAddress, JSONArray ipData){
-        if (!ipData.contains(ipAddress)) {
-            ipData.add(ipAddress);
+        if (!ipData.toList().contains(ipAddress)) {
+            ipData.put(ipAddress);
             return ipData;
         } else {
             return null;
@@ -126,12 +173,12 @@ public class PlayerDataHandler {
      * @return 
      */
     public static JSONArray nameData(String name, JSONArray nameData){
-        if (!nameData.contains(name)){
-            nameData.add(name);
+        System.out.println("namdData method:" + nameData);
+        if (!nameData.toList().contains(name)){
+            nameData.put(name);
+            System.out.println("nameData method:" + nameData);
             return nameData;
-        } else {
-            return null;
-        }
+        } else return null;
     }
 
     /** *  Determine if a user's nick is already saved in their historical nick data.
@@ -141,13 +188,55 @@ public class PlayerDataHandler {
      * @param nickData
      * @return 
      */
-    public static JSONArray nickData (String nick, JSONArray nickData) {
-        if (!nickData.contains(nick)) {
-            nickData.add(nick);
+    public static JSONArray nickData(String nick, JSONArray nickData) {
+        if (!nickData.toList().contains(nick)) {
+            nickData.put(nick);
             return nickData;
-        } else {
-            return null;
+        } else return null;
+    }
+    
+    public static JSONObject starData(JSONObject starData, String value) {
+        switch (value) {
+            case "new": {
+                starData.put("promote", false);
+                starData.put("probation", false);
+                starData.put("consult", false);
+                break;
+            }
+            case "promote": {
+                starData.put("promote", !Boolean.valueOf(String.valueOf(starData.get("promote"))));
+                break;
+            }
+            case "probation": {
+                starData.put("probation", !Boolean.valueOf(String.valueOf(starData.get("probation"))));
+                break;
+            }
+            case "consult": {
+                starData.put("consult", !Boolean.valueOf(String.valueOf(starData.get("consult"))));
+                break;
+            }
+            
         }
+
+        return starData;
+
+    }
+    
+    public static JSONObject createPlayerRankChangeData(String fromRank, String toRank, String byWhom){
+        JSONObject playerData = new JSONObject();
+        JSONObject rankData = new JSONObject();
+        JSONObject rankDataTop = new JSONObject();
+        
+        rankData.put("from-rank", fromRank);
+        rankData.put("to-rank", toRank);
+        rankData.put("changed-by", byWhom);
+        
+        rankDataTop.put(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME), rankData);
+        
+        playerData.put("rank", toRank);
+        playerData.put("rank-data", rankDataTop);
+        
+        return playerData;
     }
     
     

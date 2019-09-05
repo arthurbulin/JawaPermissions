@@ -16,9 +16,8 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jawamaster.jawapermissions.JawaPermissions;
+import jawamaster.jawapermissions.PlayerDataObject;
 import jawamaster.jawapermissions.Rank;
-import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.command.BlockCommandSender;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
@@ -178,7 +177,7 @@ public class PermissionsHandler {
         if (commandSender instanceof ConsoleCommandSender) return true; //This way console can perform actions on owners
         else if(commandSender instanceof BlockCommandSender) return false; //Command blocks shouldnt be able to do this
         
-        if (plugin.getServer().getPlayer(target) == null) return offlineImmunityCheck(((Player) commandSender).getUniqueId(), target);
+        //if (plugin.getServer().getPlayer(target) == null) return offlineImmunityCheck(((Player) commandSender).getUniqueId(), target);
         else return onlineImmunityCheck(((Player) commandSender).getUniqueId(), target);
     }
     
@@ -194,15 +193,29 @@ public class PermissionsHandler {
         return senderImmunity < targetImmunity;
     }
     
+    public boolean offlineImmunityCheck(CommandSender commandSender, UUID target, String targetRank){
+        return offlineImmunityCheck(((Player) commandSender).getUniqueId(), targetRank);
+    }
+    
     /** Will return true if player can perform operation on target. Will return false if player CANNOT perform operation on target.
      * This will only work for an OFFLINE target and should only be accessed by this class.
      * @param commandSender
      * @param target
      * @return 
      */
-    private boolean offlineImmunityCheck(UUID commandSender, UUID target) {
-        //TODO create the logic to determine offline immunity checks. Right now this just allows it.
-        return true;
+    private boolean offlineImmunityCheck(UUID commandSender, String targetRank) {
+        int senderImmunity = JawaPermissions.immunityLevels.get(JawaPermissions.playerRank.get(commandSender));
+        int targetImmunity = JawaPermissions.immunityLevels.get(targetRank);
+        return senderImmunity < targetImmunity;
+    }
+    
+    /**Returns true if target is immune to admin.
+     * @param adminRank
+     * @param targetRank
+     * @return 
+     */
+    public boolean isImmune(String adminRank, String targetRank){
+        return JawaPermissions.immunityLevels.get(adminRank.toLowerCase()) < JawaPermissions.immunityLevels.get(targetRank);
     }
     
     /** Redirects permissions check to the propper has method based on the instanceof the commandSender. This returns false for any commandSender that
