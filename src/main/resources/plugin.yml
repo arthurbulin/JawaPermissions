@@ -1,6 +1,6 @@
 name: JawaPermissions
 main: jawamaster.jawapermissions.JawaPermissions
-version: 0.6.0ax
+version: 0.6.0a
 commands:
   uuid:
     description: This command returns the UUID of a user.
