@@ -6,6 +6,7 @@
 package jawamaster.jawapermissions.events;
 
 import java.util.Map;
+import jawamaster.jawapermissions.PlayerDataObject;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
@@ -17,9 +18,11 @@ import org.bukkit.event.HandlerList;
 public class PlayerInfoLoaded extends Event{
     private static final HandlerList handlers = new HandlerList();
     private static Player player;
-    private static Map<String, Object> playerData;
+    private static PlayerDataObject playerData;
     
-    public PlayerInfoLoaded(Player who, Map<String, Object> data) {
+    
+    public PlayerInfoLoaded(Player who, PlayerDataObject data) {
+        super(true);
         PlayerInfoLoaded.player = who;
         PlayerInfoLoaded.playerData = data;
         System.out.println(player.getName() + " has been loaded");
@@ -27,6 +30,10 @@ public class PlayerInfoLoaded extends Event{
     
     public Player getPlayer() {
         return player;
+    }
+    
+    public PlayerDataObject getPlayerDataObject(){
+        return playerData;
     }
 
     @Override

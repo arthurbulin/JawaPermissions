@@ -8,6 +8,7 @@ package jawamaster.jawapermissions.commands;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.UUID;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -94,8 +95,6 @@ public class setRank implements CommandExecutor {
             targetUUID = target.getUniqueId().toString();
             targetRank = JawaPermissions.playerRank.get(target.getUniqueId());
         } else { //if player is offline
-
-            
             pdObject = ESHandler.findOfflinePlayer(parsedArguments.get("p"), true);
             if ( pdObject == null) {
                 return true;//Short circuit in the event the player is not found
@@ -111,12 +110,15 @@ public class setRank implements CommandExecutor {
         
         //If admin is in the console or not
         if (parsedArguments.containsKey("b") && (commandSender instanceof ConsoleCommandSender)){
-            adminUUID = ESHandler.findOfflinePlayer(parsedArguments.get("b")).getId();
+            PlayerDataObject adminData = ESHandler.findOfflinePlayer(parsedArguments.get("b"), true);
+            adminUUID = adminData.getPlayerUUID();
+            adminRank = adminData.getRank();
         } else {
             adminUUID = ((Player) commandSender).getUniqueId().toString();
+            adminRank = JawaPermissions.playerRank.get(UUID.fromString(adminUUID));
         }
 
-        if (!JawaPermissions.permissionsHandler.immunityCheck(commandSender, target)){
+        if (!JawaPermissions.permissionsHandler.isImmune(adminRank, targetRank)){
             if (commandSender instanceof Player) ((Player) commandSender).sendMessage(target.getName() + "Has immunity to your specified command.");
             return true;
         }
@@ -126,8 +128,12 @@ public class setRank implements CommandExecutor {
             return true;
         }
 
-        
-        ESHandler.updateData(target, PlayerDataHandler.createPlayerRankChangeData(targetRank, parsedArguments.get("r"), adminUUID));
+        if (target != null){
+            ESHandler.asyncUpdateData(target, PlayerDataHandler.createPlayerRankChangeData(targetRank, parsedArguments.get("r"), adminUUID));
+        } else {
+            
+            ESHandler.asyncUpdateData(targetUUID, PlayerDataHandler.createPlayerRankChangeData(targetRank, parsedArguments.get("r"), adminUUID));
+        }
 
         return true;
     }

@@ -13,6 +13,7 @@ import java.util.logging.Level;
 import jawamaster.jawapermissions.JawaPermissibleBase;
 import jawamaster.jawapermissions.JawaPermissions;
 import jawamaster.jawapermissions.PlayerDataObject;
+import jawamaster.jawapermissions.events.PlayerInfoLoaded;
 import jawamaster.jawapermissions.handlers.ESHandler;
 import static jawamaster.jawapermissions.handlers.ESHandler.indexPlayerData;
 import jawamaster.jawapermissions.handlers.PlayerDataHandler;
@@ -68,6 +69,7 @@ public class PlayerJoin implements Listener {
 
                     System.out.print(pdObject.getRank());
                     JawaPermissions.playerRank.put(target.getUniqueId(), pdObject.getRank());
+                    Bukkit.getServer().getPluginManager().callEvent(new PlayerInfoLoaded(target, pdObject));
                     target.sendMessage("You have been loaded!");
 
                     //Subscribe user to correct chat permission channels.
@@ -102,7 +104,7 @@ public class PlayerJoin implements Listener {
                         updateData.put("ips", ips);
                     }
 
-                    ESHandler.updateData(target, updateData);
+                    ESHandler.asyncUpdateData(target, updateData);
 
                 } else { //if user isn't installed this is a new user. install them
                     JSONObject newPlayerData = PlayerDataHandler.firstTimePlayer(target.getName(), target.getAddress().getAddress().toString());

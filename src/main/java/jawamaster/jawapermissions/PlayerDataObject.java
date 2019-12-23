@@ -20,6 +20,8 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import jawamaster.jawapermissions.handlers.ESHandler;
+import jawamaster.jawapermissions.handlers.PlayerDataHandler;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -28,63 +30,75 @@ import org.json.JSONObject;
  * @author alexander
  */
 public class PlayerDataObject {
+
     private UUID player;
     private JSONObject banData;
     private JSONObject playerData;
-    
-    public PlayerDataObject (UUID player){
+    private JSONObject homeData;
+    private JSONObject updateData;
+
+    public PlayerDataObject(UUID player) {
         this.player = player;
     }
-    
-    public void addBanData(Map banData){
+
+    public void addBanData(Map banData) {
         this.banData = new JSONObject(banData);
     }
-    
-    public void addPlayerData(Map playerData){
+
+    public void addPlayerData(Map playerData) {
         this.playerData = new JSONObject(playerData);
     }
-    
-    public String getPlayerUUID(){
+
+    public void addHomeData(Map homeData) {
+        this.homeData = new JSONObject(homeData);
+    }
+
+    public String getPlayerUUID() {
         return player.toString();
     }
-    
-    public void addSearchData(String index, Map data){
-        switch (index){
-            case "players":{
+
+    public void addSearchData(String index, Map data) {
+        switch (index) {
+            case "players": {
                 this.playerData = new JSONObject(data);
             }
-            case "bans":{
+            case "bans": {
                 this.banData = new JSONObject(data);
+            }
+            case "homes": {
+                this.homeData = new JSONObject(data);
             }
         }
     }
-    
-    public JSONObject getPlayerData(){
+
+    public JSONObject getPlayerData() {
         return playerData;
     }
-    
-    public boolean containsBanData(){
-        if (banData == null) return false;
-        else return true;
+
+    public boolean containsBanData() {
+        return banData != null;
     }
-    
-    public boolean containsPlayerData(){
-        if (playerData == null) return false;
-        else return true;
+
+    public boolean containsPlayerData() {
+        return playerData != null;
     }
-    
-    
-    
-    //Ban elements
-    public String getLatestBanDate(){
+
+    public boolean containsHomeData() {
+        return homeData != null;
+    }
+
+    //##########################################################################
+    //#   Player ban gets
+    //##########################################################################
+    public String getLatestBanDate() {
         return (String) playerData.get("latest-ban");
     }
-    
-    private JSONObject getBanEntry(String banDateTime){
+
+    private JSONObject getBanEntry(String banDateTime) {
         return (JSONObject) banData.get(banDateTime);
     }
-    
-    public String getBanReason(String banDateTime){
+
+    public String getBanReason(String banDateTime) {
         return (String) getBanEntry(banDateTime).get("reason");
     }
 
@@ -103,76 +117,167 @@ public class PlayerDataObject {
     public String getBannedUnBy(String banDateTime) {
         return (String) getBanEntry(banDateTime).get("unbanned-by");
     }
-    
-    public String unbannedOn(String banDateTime){
+
+    public String unbannedOn(String banDateTime) {
         return (String) getBanEntry(banDateTime).get("unbanned-on");
     }
-    
+
     public boolean getBanState(String banDateTime) {
         return Boolean.valueOf((String) getBanEntry(banDateTime).get("active"));
     }
-    
-    public boolean isConsoleBan(String banDateTime){
+
+    public boolean isConsoleBan(String banDateTime) {
         return Boolean.valueOf((String) getBanEntry(banDateTime).get("via-console"));
     }
-    
-     public boolean isConsoleUnban(String banDateTime){
+
+    public boolean isConsoleUnban(String banDateTime) {
         return Boolean.valueOf((String) getBanEntry(banDateTime).get("unbanned-via-console"));
     }
-     
-     public Set getListOfBans(){
-         return banData.keySet();
-     }
-    
-    
-    
+
+    public Set getListOfBans() {
+        return banData.keySet();
+    }
+
     //##########################################################################
     //#   Player data gets
     //##########################################################################
-    public String getRank(){
+    public String getRank() {
         return (String) playerData.get("rank");
     }
-    
-    public String getName(){
+
+    public String getName() {
         return (String) playerData.get("name");
     }
-    
+
     public int getPlayTime() {
         return (int) playerData.get("play-time");
     }
-    
-    public LocalDateTime getLastLogin(){
+
+    public LocalDateTime getLastLogin() {
         return LocalDateTime.parse((String) playerData.get("last-login"));
     }
-    
-    public LocalDateTime getLastLogout(){
+
+    public LocalDateTime getLastLogout() {
         return LocalDateTime.parse((String) playerData.get("last-logout"));
     }
-    
-    public JSONArray getStarData(){
-        return new JSONArray(String.valueOf(playerData.get("star")));
-    }
-    
-    public JSONArray getIPArray(){
+
+    public JSONArray getIPArray() {
         return new JSONArray(String.valueOf(playerData.get("ips")));
     }
-    
-    public boolean isBanned(){
+
+    public boolean isBanned() {
         return Boolean.valueOf(String.valueOf(playerData.get("banned")));
     }
-    
-    public JSONArray getNameArray(){
+
+    public JSONArray getNameArray() {
         return new JSONArray(String.valueOf(playerData.get("name-data")));
-               
+
     }
-    
-    public JSONObject getLatestBan(){
+
+    public JSONObject getLatestBan() {
         return getBanEntry(getLatestBanDate());
     }
-    
-    public String getIP(){
+
+    public String getIP() {
         return (String) playerData.get("ip");
     }
-    
-   
+
+    //##########################################################################
+    //#   Player home gets
+    //##########################################################################
+    public boolean homeExists(String homeName) {
+        return homeData.keySet().contains(homeName);
+    }
+
+    /**
+     * This will return the home entry in for that name. It will need to be
+     * location processed to be usable.
+     *
+     * @param homeName
+     * @return
+     */
+    public JSONObject getHome(String homeName) {
+        return homeData.getJSONObject(homeName);
+    }
+
+    public Set getHomeEntries() {
+        return homeData.keySet();
+    }
+
+    public boolean containsHome(String homeName) {
+        if (containsHomeData()) {
+            return homeData.keySet().contains(homeName);
+        } else {
+            return false;
+        }
+    }
+
+    //##########################################################################
+    //#   Player name gets
+    //########################################################################## 
+    public String getStar() {
+        return playerData.getString("star");
+    }
+
+    public String getNickName() {
+        return playerData.getString("nick");
+    }
+
+    public String getTag() {
+        return playerData.getString("tag");
+    }
+
+    public JSONArray getNickData() {
+        return playerData.getJSONArray("nick-data");
+    }
+
+    //##########################################################################
+    //#   Data updates
+    //##########################################################################
+    public void addUpdateData() {
+        updateData = new JSONObject();
+    }
+
+    /**
+     * adds a nick and resolves the nick-data attribute for update. Should only
+     * be used with PlayerDataObjects that contain a player's full data.
+     *
+     * @param nick
+     */
+    public void updateNick(String nick) {
+        if (!nick.equals("")) {
+            JSONArray nickData = PlayerDataHandler.nickData(nick, getNickData());
+            if (nickData != null) {
+                updateData.put("nick-data", nickData);
+            }
+        }
+        updateData.put("nick", nick);
+    }
+
+    public void updateTag(String tag) {
+        updateData.put("tag", tag);
+    }
+
+    public void updateStarData(String obj) {
+        updateData.put("star", obj);
+    }
+
+    public void updateRank(String newRank, UUID adminUUID) {
+        updateData.put("rank-data", PlayerDataHandler.createPlayerRankChangeData(getRank(), newRank, adminUUID.toString()));
+        updateData.put("rank", newRank);
+    }
+
+    public void triggerAsyncUpdate() {
+        ESHandler.asyncUpdateData(player.toString(), updateData);
+    }
+    //##########################################################################
+    //#   Debug
+    //##########################################################################
+
+    public void spillData() {
+        System.out.println("PlayerDataObject Spilling data for player: " + player.toString());
+        System.out.println(playerData);
+
+    }
+
 }

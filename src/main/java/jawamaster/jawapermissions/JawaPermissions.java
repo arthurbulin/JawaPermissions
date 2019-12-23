@@ -199,7 +199,7 @@ public class JawaPermissions extends JavaPlugin {
             System.out.println(pluginSlug + "ElasticSearch DB pings as: " + restPing );
         }
         
-        eshandler = new ESHandler(this);
+        eshandler = new ESHandler(restClient);
         
     }
     

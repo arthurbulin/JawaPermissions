@@ -5,10 +5,13 @@
 */
 package jawamaster.jawapermissions.handlers;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import jawamaster.jawapermissions.JawaPermissions;
+import jawamaster.jawapermissions.PlayerDataObject;
+import net.md_5.bungee.api.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
@@ -47,7 +50,7 @@ public class PlayerDataHandler {
         playerData.put("nick", "");
         playerData.put("nick-data", new JSONArray());
         playerData.put("tag", "false");
-        playerData.put("star", starData(new JSONObject(), "new"));
+        playerData.put("star", "");
         playerData.put("ip", ip);
         playerData.put("ips",ipData(ip, new JSONArray()));
 
@@ -72,7 +75,7 @@ public class PlayerDataHandler {
         banData.put("reason", parsedArguments.get("r"));
        
         if (commandSender instanceof Player){
-            banData.put("banned-by", ((Player) commandSender).getUniqueId());
+            banData.put("banned-by", ((Player) commandSender).getUniqueId().toString());
             banData.put("via-console", false);
         } else {
             System.out.println("by argument: " + parsedArguments.get("b"));
@@ -239,5 +242,51 @@ public class PlayerDataHandler {
         return playerData;
     }
     
+    /** Generate small JSONObject for updating a player's tag.
+     * @param tag
+     * @return 
+     */
+    public static JSONObject createPlayerTagChangeData(String tag){
+        JSONObject tagChange = new JSONObject();
+        
+        tagChange.put("tag", tag);
+        
+        return tagChange;
+    }
+    
+    public static JSONObject createPlayerNickChangeData(String nick){
+        JSONObject nickChange = new JSONObject();
+        nickChange.put("nick", nick);
+        return nickChange;
+    }
+    
+    /** Resolve a player name to a PlayerDataObject. This will return a data filled
+     * PlayerDataObject if the player is found. This first checks is a player is online.
+     * If they are then the UUID is extracted and the PlayerDataObject is populated with
+     * data from a UUID index search. If the player is not online this calls ESHandler.findOfflinePlayer(target, true)
+     * so that a data filled PlayerDataObject is returned. If no exact match is found to the player name field
+     * this will return null to specify that a player of that name was not found. This sends
+     * a unified error message to the commandSender that informs them the user was not found.
+     * @param commandSender
+     * @param target
+     * @return
+     * @throws IOException 
+     */
+    public static PlayerDataObject validatePlayer(CommandSender commandSender, String target) throws IOException{
+        Player onlinePlayer = JawaPermissions.plugin.getServer().getPlayer(target);
+        PlayerDataObject pdObject = null;
+        if (onlinePlayer == null){ //If not online
+            pdObject = ESHandler.findOfflinePlayer(target, true);
+        } else { //If online. This should never be null then because the player has already been found
+            pdObject = ESHandler.getPlayerData(target);
+        }
+        
+        if (pdObject == null){
+            commandSender.sendMessage(ChatColor.RED + " > Error: " + target + " was not resolvable as an online or offline player. Please be sure the name is exact and retry your command.");
+            return null;
+        } else {    
+            return pdObject;
+        }
+    }
     
 }

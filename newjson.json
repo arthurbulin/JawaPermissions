@@ -1,0 +1,27 @@
+{
+    "error": {
+        "root_cause": [{
+                "type": "remote_transport_exception",
+                "reason": "[JawaGamingPuterLinux][127.0.0.1:9300][indices:data/write/update[s]]"
+            }],
+        "type": "illegal_argument_exception",
+        "reason": "failed to execute script",
+        "caused_by": {
+            "type": "script_exception",
+            "reason": "compile error",
+            "script_stack": ["'{\"script\":{\"source\":\"ctx ...", 
+                             "^---- HERE"],
+            "script": "'{\"script\":{\"source\":\"ctx._source.remove(\\\"home\\\");\",\"lang\":\"painless\"}}'",
+            "lang": "painless",
+            "caused_by": {
+                "type": "illegal_argument_exception",
+                "reason": "unexpected character ['{\"script\":{\"source\":\"ctx._source.remove(\\\"]. The only valid escape sequences in strings starting with ['] are [\\\\] and [\\'].",
+                "caused_by": {
+                    "type": "lexer_no_viable_alt_exception",
+                    "reason": null
+                }
+            }
+        }
+    },
+    "status": 400
+}

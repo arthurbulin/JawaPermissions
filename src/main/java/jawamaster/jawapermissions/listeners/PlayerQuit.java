@@ -33,7 +33,7 @@ public class PlayerQuit implements Listener {
                 
                  JSONObject logoutUpdate = new JSONObject();
                 logoutUpdate.put("last-logout", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-                 ESHandler.updateData(player, logoutUpdate);
+                 ESHandler.asyncUpdateData(player, logoutUpdate);
                  if (JawaPermissions.debug) System.out.println(JawaPermissions.pluginSlug + "[PlayerQuitEvent] updating " + player.getName() + "'s last logout time.");
             }
          });

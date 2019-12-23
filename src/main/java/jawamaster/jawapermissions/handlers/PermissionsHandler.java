@@ -188,7 +188,9 @@ public class PermissionsHandler {
      * @return 
      */
     private boolean onlineImmunityCheck(UUID commandSender, UUID target){
+        
         int senderImmunity = JawaPermissions.immunityLevels.get(JawaPermissions.playerRank.get(commandSender));
+        System.out.println("immunity check: " + JawaPermissions.playerRank.get(target));
         int targetImmunity = JawaPermissions.immunityLevels.get(JawaPermissions.playerRank.get(target));
         return senderImmunity < targetImmunity;
     }

@@ -13,13 +13,12 @@ import java.util.HashSet;
 import java.util.UUID;
 import jawamaster.jawapermissions.JawaPermissions;
 import jawamaster.jawapermissions.PlayerDataObject;
-import jawamaster.jawapermissions.events.AsyncPlayerKickEvent;
 import jawamaster.jawapermissions.handlers.ESHandler;
 import jawamaster.jawapermissions.handlers.PlayerDataHandler;
 import jawamaster.jawapermissions.utils.ArgumentParser;
 import jawamaster.jawapermissions.utils.ESRequestBuilder;
 import jawamaster.jawapermissions.utils.TimeParser;
-import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -66,10 +65,10 @@ public class banPlayer implements CommandExecutor {
     
     private boolean banPlayer(CommandSender commandSender, Command arg1, String arg2, String[] arg3){
                 //Declare the needed variables for the assessment
-        usage = "/ban <-[o|u|f]> -p <playername> -r <reason for ban> [<-d|h|m> <integer>] [<-b> <your username>]";
+        usage = "/ban <-[u|s]> -p <playername> -r <reason for ban> [<-d|h|m> <integer>] [<-b> <your username>]";
         
         //TODO add options for silent kick or ban
-        acceptedFlags = new HashSet(Arrays.asList("p", "r", "h", "flags", "d", "m", "o", "u", "f", "b"));
+        acceptedFlags = new HashSet(Arrays.asList("p", "r", "h", "flags", "d", "m", "o", "u", "b","s"));
 
 //###############################################################################
 // Validate command input
@@ -121,29 +120,30 @@ public class banPlayer implements CommandExecutor {
                 targetUUID = UUID.fromString(ESHandler.findOfflinePlayer(parsedArguments.get("p")).getId());
 
             
-//            PlayerDataObject pdObject = new PlayerDataObject(targetUUID);
-//            MultiSearchRequest multiSearchRequest = new MultiSearchRequest(); 
-//            ESRequestBuilder.addToMultiSearchRequest(multiSearchRequest, "players", "_id", targetUUID.toString());
-//            pdObject = ESHandler.runMultiIndexSearch(multiSearchRequest, pdObject);
+            PlayerDataObject pdObject = new PlayerDataObject(targetUUID);
+            MultiSearchRequest multiSearchRequest = new MultiSearchRequest(); 
+            ESRequestBuilder.addToMultiSearchRequest(multiSearchRequest, "players", "_id", targetUUID.toString());
+            pdObject = ESHandler.runMultiIndexSearch(multiSearchRequest, pdObject);
             
-//            if (!JawaPermissions.permissionsHandler.offlineImmunityCheck(commandSender, targetUUID,pdObject.getRank())) {
-//                    commandSender.sendMessage("Based on rank " + parsedArguments.get("p") + " is immune to your command!");
-//                    commandSender.sendMessage("Please escalate this ban to a higher level for approval and execution!");
-//                    return true;
-//            }
+            if (!JawaPermissions.permissionsHandler.offlineImmunityCheck(commandSender, targetUUID,pdObject.getRank())) {
+                    commandSender.sendMessage("Based on rank " + parsedArguments.get("p") + " is immune to your command!");
+                    commandSender.sendMessage("Please escalate this ban to a higher level for approval and execution!");
+                    return true;
+            }
             
         } else {
             targetPlayer = JawaPermissions.plugin.getServer().getPlayer(parsedArguments.get("p"));
+            targetUUID = targetPlayer.getUniqueId();
             if (targetPlayer == null) {
                 commandSender.sendMessage("Error: Targer Player returned null! This is likely because the player is offline. Simply repeat your command with the -o flag.");
                 return true;
             }
-//            if (!JawaPermissions.permissionsHandler.immunityCheck(commandSender, targetUUID)) {
-//                commandSender.sendMessage("Based on rank " + parsedArguments.get("p") + " is immune to your command!");
-//                commandSender.sendMessage("Please escalate this ban to a higher level for approval and execution!");
-//                return true;
-//            }
-            targetUUID = targetPlayer.getUniqueId();
+            if (!JawaPermissions.permissionsHandler.immunityCheck(commandSender, targetUUID)) {
+                commandSender.sendMessage("Based on rank " + parsedArguments.get("p") + " is immune to your command!");
+                commandSender.sendMessage("Please escalate this ban to a higher level for approval and execution!");
+                return true;
+            }
+            
 
         }
 
@@ -163,7 +163,7 @@ public class banPlayer implements CommandExecutor {
 //###############################################################################
 //# Assemble ban information
 //###############################################################################   
-
+            
             JSONObject banIndexTopLevel = PlayerDataHandler.assembleBanData(commandSender, parsedArguments, banDate);
             if (banIndexTopLevel == null) { //to accomidate for failures on the other side.
                 commandSender.sendMessage("Ban Command Failed.");
@@ -177,8 +177,10 @@ public class banPlayer implements CommandExecutor {
                         
             //Assemble bulk request and update requests
             bulkRequest = new BulkRequest();
-            playerIndexRequest = new UpdateRequest("players", targetUUID.toString()).doc(playerData.toMap()).docAsUpsert(true);
-            banIndexRequest = new UpdateRequest("bans", targetUUID.toString()).doc(banIndexTopLevel.toMap()).docAsUpsert(true);
+            System.out.println("playerData: " + playerData);
+            System.out.println("targetUUID: "+ targetUUID.toString());
+            playerIndexRequest = ESRequestBuilder.updateRequestBuilder(playerData, "players", targetUUID.toString(), true);
+            banIndexRequest = ESRequestBuilder.updateRequestBuilder(banIndexTopLevel, "bans", targetUUID.toString(), true);
             
             bulkRequest.add(banIndexRequest);
             bulkRequest.add(playerIndexRequest);
@@ -190,8 +192,11 @@ public class banPlayer implements CommandExecutor {
                 String banString = "You have been banned for: " + parsedArguments.get("r").trim() + ".";
                 if (!PlayerDataHandler.assessBanTime(parsedArguments, banDate).equals("forever")) banString += " This ban will end on: " + TimeParser.getHumanReadableDateTime(parsedArguments.get("banned-until"));
                 targetPlayer.kickPlayer(banString);
-                //AsyncPlayerKickEvent apke = new AsyncPlayerKickEvent(targetPlayer, banString);
-                //Bukkit.getPluginManager().callEvent(apke);
+
+            }
+            
+            if (!parsedArguments.containsKey("s")){
+                JawaPermissions.plugin.getServer().broadcastMessage(ChatColor.DARK_RED + "[Server] " + parsedArguments.get("p") + " has been banned for " + parsedArguments.get("r"));
             }
 
         }
