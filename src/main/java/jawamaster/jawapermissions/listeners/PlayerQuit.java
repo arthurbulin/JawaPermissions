@@ -7,7 +7,6 @@ package jawamaster.jawapermissions.listeners;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
 import jawamaster.jawapermissions.JawaPermissions;
 import jawamaster.jawapermissions.handlers.ESHandler;
 import org.bukkit.Bukkit;
