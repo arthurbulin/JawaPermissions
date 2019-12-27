@@ -28,9 +28,8 @@ public class getUUID implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender commandSender, Command arg1, String player, String[] arg3) {
         String usage = "/uuid <player>";
-        JawaPermissions.plugin.getServer().getPlayer(player);
-        if (commandSender instanceof Player) commandSender.sendMessage(((Player) commandSender).getUniqueId().toString());
-        else if (commandSender instanceof ConsoleCommandSender) commandSender.sendMessage("Console does not have a UUID.");        
+        ;
+        commandSender.sendMessage(JawaPermissions.plugin.getServer().getPlayer(player).getUniqueId().toString());    
         return true;
     }
     
