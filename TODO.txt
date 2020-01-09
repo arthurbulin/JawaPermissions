@@ -1,0 +1,7 @@
+This file is just a list of things that I need to do in no particular order and not necessarily just for this plugin:
+Migrate JawaPermissions core handling functions to JawaCore
+create a message handler
+create tab completion
+finish setstar
+yeetport
+motd

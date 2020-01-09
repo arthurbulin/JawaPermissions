@@ -21,6 +21,7 @@ public class PlayerRankChange extends Event{
     public PlayerRankChange(Player who, String newRank) {
         PlayerRankChange.player = who;
         PlayerRankChange.rank = newRank;
+        //PlayerRankChange.pdObject = pdObject;
         System.out.println("PlayerRankChangeCalled for " + who.getDisplayName() + " with rank " + newRank);
     }
     
@@ -29,9 +30,10 @@ public class PlayerRankChange extends Event{
     }
     
     public String getRank() {
+    //    return pdObject.getRank();
         return rank;
     }
-    
+        
     @Override
     public HandlerList getHandlers() {
         return handlers;

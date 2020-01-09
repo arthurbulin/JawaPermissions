@@ -6,6 +6,7 @@
 package jawamaster.jawapermissions.handlers;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -13,6 +14,7 @@ import java.util.logging.Logger;
 import jawamaster.jawapermissions.JawaPermissions;
 import jawamaster.jawapermissions.PlayerDataObject;
 import jawamaster.jawapermissions.utils.ESRequestBuilder;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -40,6 +42,7 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
@@ -50,34 +53,35 @@ public class ESHandler {
 
     private static RestHighLevelClient restClient;
 
-    private JawaPermissions plugin;
-    private JavaPlugin javaplugin;
-    
-    
     private final static String handlerSlug = "[ESHandler] ";
     private static boolean notInES = false;
     private final static String REDMESSAGEPLUG = ChatColor.RED + "> ";
     private final static String GREENMESSAGEPLUG = ChatColor.GREEN + "> ";
-    
 
-    /** Public constructor for the Elasticsearch Database handler. This object
+    /**
+     * * Public constructor for the Elasticsearch Database handler.This object
      * handles all calls to the database.
-     * @param plugin 
+     *
+     * @param restClient
+     * @param plugin
      */
     public ESHandler(RestHighLevelClient restClient) {
         ESHandler.restClient = restClient;
     }
-    
-    /** Will search the Elasticsearch database syncrounously to find if a user has
-     * already been indexed. If their UUID exists in the index it will return true.
+
+    /**
+     * Will search the Elasticsearch database syncrounously to find if a user
+     * has already been indexed. If their UUID exists in the index it will
+     * return true.
+     *
      * @param target
-     * @return 
+     * @return
      */
     public static boolean alreadyIndexed(UUID target) {
         GetRequest getRequest = new GetRequest("players", target.toString());
         getRequest.fetchSourceContext(new FetchSourceContext(false));
         getRequest.storedFields("_none_");
-        
+
         try {
             return restClient.exists(getRequest, RequestOptions.DEFAULT);
         } catch (IOException ex) {
@@ -87,9 +91,10 @@ public class ESHandler {
         }
     }
 
-    /**Indexes the player's data to the ElasticSearch database. This should only
-     * be used to add a new player to the database. This method constructs the request
-     * and passes it to generalIndex(indexRequest) to process the actual
+    /**
+     * Indexes the player's data to the ElasticSearch database. This should only
+     * be used to add a new player to the database. This method constructs the
+     * request and passes it to generalIndex(indexRequest) to process the actual
      * indexing.
      *
      * @param target
@@ -116,9 +121,12 @@ public class ESHandler {
         return true;
     }
 
-    /** This will update a player's data Async and will printout to the console success.
+    /**
+     * This will update a player's data Async and will printout to the console
+     * success.
+     *
      * @param target
-     * @param updateData 
+     * @param updateData
      */
     public static void asyncUpdateData(Player target, JSONObject updateData) {
         UpdateRequest updateRequest = ESRequestBuilder.updateRequestBuilder(updateData, "players", target.getUniqueId().toString(), true);
@@ -136,7 +144,7 @@ public class ESHandler {
             }
         });
     }
-    
+
     public static void asyncUpdateData(String targetUUID, JSONObject updateData) {
         UpdateRequest updateRequest = ESRequestBuilder.updateRequestBuilder(updateData, "players", targetUUID, true);
 
@@ -153,23 +161,27 @@ public class ESHandler {
             }
         });
     }
-    
-    /** This will run and Async bulk request and print generic indexing success or failure messages to the commandSender.
-     * TODO later this will accept a message object so that good response can be sent to the players and server without 
-     * having to overload the hell out of the call.
+
+    /**
+     * This will run and Async bulk request and print generic indexing success
+     * or failure messages to the commandSender. TODO later this will accept a
+     * message object so that good response can be sent to the players and
+     * server without having to overload the hell out of the call.
+     *
      * @param request
-     * @param messageToo 
+     * @param messageToo
      */
-    public static void runAsyncBulkRequest(BulkRequest request, CommandSender messageToo){
+    public static void runAsyncBulkRequest(BulkRequest request, CommandSender messageToo) {
         restClient.bulkAsync(request, RequestOptions.DEFAULT, new ActionListener<BulkResponse>() {
             @Override
             public void onResponse(BulkResponse arg0) {
-                for (BulkItemResponse resp : arg0.getItems()){
-                    if (!resp.isFailed()) messageToo.sendMessage(GREENMESSAGEPLUG + "Request to index: " + resp.getIndex() + " for _id: " + resp.getId() + " has been successful!" );
-                    else {
+                for (BulkItemResponse resp : arg0.getItems()) {
+                    if (!resp.isFailed()) {
+                        messageToo.sendMessage(GREENMESSAGEPLUG + "Request to index: " + resp.getIndex() + " for _id: " + resp.getId() + " has been successful!");
+                    } else {
                         messageToo.sendMessage(REDMESSAGEPLUG + "Request to index: " + resp.getIndex() + " for _id: " + resp.getId() + " has failed!!!");
                         messageToo.sendMessage(REDMESSAGEPLUG + "Failure Message: " + resp.getFailureMessage());
-                        messageToo.sendMessage(REDMESSAGEPLUG + "Give your technical administrator this id to trace the error in the log: " +  resp.toString());
+                        messageToo.sendMessage(REDMESSAGEPLUG + "Give your technical administrator this id to trace the error in the log: " + resp.toString());
                         System.out.println(resp.toString() + ": runAsyncBulkRequest failure!! FailureMessage: " + resp.getFailureMessage());
                     }
                 }
@@ -183,11 +195,14 @@ public class ESHandler {
             }
         });
     }
-    
-    /** Executes a multi index search and returns the information in a PlayerDataObject.
+
+    /**
+     * Executes a multi index search and returns the information in a
+     * PlayerDataObject.
+     *
      * @param multiSearchRequest
      * @param pdObject
-     * @return 
+     * @return
      */
     public static PlayerDataObject runMultiIndexSearch(MultiSearchRequest multiSearchRequest, PlayerDataObject pdObject) {
 
@@ -207,10 +222,12 @@ public class ESHandler {
         return pdObject;
     }
 
-    /** Executes an lookup and writes out information to command sender.
+    /**
+     * Executes an lookup and writes out information to command sender.
+     *
      * @param commandSender
      * @param target
-     * @throws IOException 
+     * @throws IOException
      */
     public static void whoLookUp(CommandSender commandSender, Player target) throws IOException { //TODO rewrite this and who command
         //System.out.println("test");
@@ -232,40 +249,102 @@ public class ESHandler {
         }
 
     }
-    
-    /** This allows a findOfflinePlayer call that moves player existence checking to this method.
-     * This method is backed by findOfflinePlayer(String target).
+
+    /** Searches for a player in the database whether the user is online or not. If the user is online the targetIdentifier
+     * should be the uuid in string form else it should be the name. If the targetIdentifier is a uuid the search shouldn't fail
+     * or get false results, but users who have had identical usernames in the past might cause false data lookups.
+     * @param commandSender
+     * @param targetIdentifier
+     * @param isOnline 
+     */
+    public static void asyncWhoLookUp(CommandSender commandSender, String targetIdentifier, boolean isOnline) {
+
+        SearchRequest searchRequest;
+        if (isOnline) {
+            searchRequest = ESRequestBuilder.buildSearchRequest("players", "_id", targetIdentifier);
+        } else {
+            searchRequest = ESRequestBuilder.buildSearchRequest("players", "name", targetIdentifier);
+        }
+        
+        restClient.searchAsync(searchRequest, RequestOptions.DEFAULT, new ActionListener<SearchResponse>() {
+            @Override
+            public void onResponse(SearchResponse response) {
+                JSONObject playerData;
+                if (isOnline || response.getHits().getHits().length == 1){
+                    playerData = new JSONObject(response.getHits().getHits()[0].getSourceAsMap());
+                    JSONArray messageData = new JSONArray();
+                    messageData.put(ChatColor.GREEN + "> " + playerData.getString("name") + "'s current player data");
+                    messageData.put(ChatColor.GREEN + " > User name: " + ChatColor.WHITE + playerData.getString("name") + " nickname: " + ChatColor.translateAlternateColorCodes('&', playerData.getString("nickname")));
+                    messageData.put(ChatColor.GREEN + " > Rank: " + ChatColor.WHITE + playerData.get("rank"));
+                    messageData.put(ChatColor.GREEN + " > Current IP: " + ChatColor.WHITE + playerData.getString("ip") + ChatColor.GREEN + " previous IPs: " + ChatColor.WHITE + playerData.getJSONArray("ips").join(","));
+                    Player target = Bukkit.getPlayer(targetIdentifier);
+                    if (isOnline && target != null){
+                        messageData.put(ChatColor.GREEN + " > Current world: " + ChatColor.WHITE + target.getWorld().getName() + ChatColor.GREEN + " GameMode: " + ChatColor.WHITE +  target.getGameMode().toString());
+                    }
+                    messageData.put(ChatColor.GREEN + " > User has also gone by: " + ChatColor.WHITE + playerData.getJSONArray("nick-data").join(","));
+                    if (playerData.getBoolean("banned")){
+                        messageData.put(ChatColor.RED + " > User is banned");
+                    }
+                    if (playerData.has("latest-ban")){
+                        
+                    }
+                } else {
+                    //Something went wrong, resolve?
+                }
+                
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
+        });
+    }
+
+    /**
+     * This allows a findOfflinePlayer call that moves player existence checking
+     * to this method. This method is backed by findOfflinePlayer(String
+     * target).
+     *
      * @param target
      * @param commandSender
-     * @return 
+     * @return
      */
-    public static SearchHit findOfflinePlayer(String target, CommandSender commandSender){
+    public static SearchHit findOfflinePlayer(String target, CommandSender commandSender) {
         SearchHit hits = findOfflinePlayer(target);
-        if (hits == null){
+        if (hits == null) {
             commandSender.sendMessage("That target player was not found the Elastic Database. Please be sure to use the exact minecraft name and not their nickname!");
             return null;
         } else {
             return hits;
         }
     }
-    /** Will return the UUID of an offline player
+
+    /**
+     * Will return the UUID of an offline player. If the information is not
+     * found this will return null.
+     *
      * @param target
-     * @return 
+     * @return
      */
     public static SearchHit findOfflinePlayer(String target) {
         try {
             SearchRequest playerSearchRequest = new SearchRequest("players");
             SearchSourceBuilder playerSearchSourceBuilder = new SearchSourceBuilder();
-            
+
             playerSearchSourceBuilder.query(QueryBuilders.matchQuery("name", target));
             playerSearchRequest.source(playerSearchSourceBuilder);
-            
+
             SearchResponse playerSearchResponse = restClient.search(playerSearchRequest, RequestOptions.DEFAULT);
-            
-            if (JawaPermissions.debug) System.out.print(JawaPermissions.pluginSlug + handlerSlug + " Search Response: " + playerSearchResponse);
+
+            if (JawaPermissions.debug) {
+                System.out.print(JawaPermissions.pluginSlug + handlerSlug + " Search Response: " + playerSearchResponse);
+            }
             SearchHit[] hits = playerSearchResponse.getHits().getHits();
-            if (hits.length != 1) return null;
-            
+            if (hits.length != 1) {
+                return null;
+            }
+
             return hits[0];
         } catch (IOException ex) {
             Logger.getLogger(ESHandler.class.getName()).log(Level.SEVERE, null, ex);
@@ -273,10 +352,11 @@ public class ESHandler {
         }
 
     }
-    
+
     /**
      * This will return a PlayerDataObject containing all user data. If the
      * player is not found this will return null
+     *
      * @param ident
      * @param getData
      * @return
@@ -287,7 +367,9 @@ public class ESHandler {
             try {
                 SearchResponse sResponse = restClient.search(ESRequestBuilder.buildSearchRequest("players", "name", ident), RequestOptions.DEFAULT);
                 SearchHit[] hits = sResponse.getHits().getHits();
-                if (hits.length != 1) return null; //If 1 entry is not found then return null.
+                if (hits.length != 1) {
+                    return null; //If 1 entry is not found then return null.
+                }
                 pdObject = new PlayerDataObject(UUID.fromString(hits[0].getId()));
                 pdObject.addPlayerData(hits[0].getSourceAsMap());
             } catch (IOException ex) {
@@ -303,22 +385,24 @@ public class ESHandler {
         return pdObject;
 
     }
-    
-    public static boolean singleUpdateRequest(UpdateRequest request){
+
+    public static boolean singleUpdateRequest(UpdateRequest request) {
         try {
             UpdateResponse response = restClient.update(request, RequestOptions.DEFAULT);
             System.out.println(response);
             if ((response.getResult() == Result.CREATED) || (response.getResult() == Result.UPDATED)) {
                 return true;
-            } else return false;
-            
+            } else {
+                return false;
+            }
+
         } catch (IOException ex) {
             Logger.getLogger(ESHandler.class.getName()).log(Level.SEVERE, null, ex);
             return false;
         }
     }
-    
-    public static SearchHit[] runSearchRequest(SearchRequest request){
+
+    public static SearchHit[] runSearchRequest(SearchRequest request) {
         try {
             SearchResponse response = restClient.search(request, RequestOptions.DEFAULT);
             return response.getHits().getHits();
@@ -327,8 +411,8 @@ public class ESHandler {
         }
         return null;
     }
-    
-    public static boolean runSingleIndexRequest(IndexRequest indexRequest){
+
+    public static boolean runSingleIndexRequest(IndexRequest indexRequest) {
         try {
             IndexResponse response = restClient.index(indexRequest, RequestOptions.DEFAULT);
             return true;
@@ -337,8 +421,8 @@ public class ESHandler {
             return false;
         }
     }
-    
-    public static boolean runSingleDocumentDeleteRequest(DeleteRequest deleteRequest){
+
+    public static boolean runSingleDocumentDeleteRequest(DeleteRequest deleteRequest) {
         try {
             DeleteResponse response = restClient.delete(deleteRequest, RequestOptions.DEFAULT);
             return response.getResult().equals(Result.DELETED);
@@ -347,8 +431,8 @@ public class ESHandler {
             return false;
         }
     }
-    
-    public static MultiSearchResponse runMultiSearchRequest(MultiSearchRequest request){
+
+    public static MultiSearchResponse runMultiSearchRequest(MultiSearchRequest request) {
         try {
             return restClient.msearch(request, RequestOptions.DEFAULT);
         } catch (IOException ex) {
@@ -356,18 +440,17 @@ public class ESHandler {
             return null;
         }
     }
-    
-    public static PlayerDataObject getPlayerData(Player target) throws IOException{
+
+    public static PlayerDataObject getPlayerData(Player target) throws IOException {
         return getPlayerData(target.getUniqueId().toString());
     }
-    
-    public static PlayerDataObject getPlayerData(String target) throws IOException{
+
+    public static PlayerDataObject getPlayerData(String target) throws IOException {
         PlayerDataObject pdObject = new PlayerDataObject(UUID.fromString(target));
         SearchResponse sResponse = restClient.search(ESRequestBuilder.buildSearchRequest("players", "_id", target), RequestOptions.DEFAULT);
         SearchHit[] hits = sResponse.getHits().getHits();
         pdObject.addPlayerData(hits[0].getSourceAsMap());
         return pdObject;
     }
-    
 
 }

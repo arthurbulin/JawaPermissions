@@ -100,9 +100,10 @@ public class PermissionsHandler {
                     
                     while (true) { //iterate over until we hit a rank that doesnt have inherited perms
                         //Add permissions list from inherited rank
+                        //System.out.println(JawaPermissions.pluginSlug + handlerSlug + " Inherit iteration for rank: " + rank + ". Rank is inheriting: " + inherits);
                         JawaPermissions.rankMap.get(rank).addPermissions(currentWorld, yaml.getConfigurationSection(inherits).getStringList("permissions"));
                         //Add prohibitions list from inherited rank
-                        JawaPermissions.rankMap.get(rank).addProhibitions(currentWorld, yaml.getConfigurationSection(inherits).getStringList("prohibitiosn"));
+                        JawaPermissions.rankMap.get(rank).addProhibitions(currentWorld, yaml.getConfigurationSection(inherits).getStringList("prohibitions"));
                         
                         //Get the next inherited rank and repeat above
                         if (yaml.getConfigurationSection(inherits).contains("inherits")) inherits = yaml.getConfigurationSection(inherits).getString("inherits");

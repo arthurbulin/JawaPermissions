@@ -7,6 +7,7 @@ package jawamaster.jawapermissions.listeners;
 
 import java.io.IOException;
 import java.util.Map;
+import jawamaster.jawapermissions.JawaPermissions;
 import jawamaster.jawapermissions.PlayerDataObject;
 import jawamaster.jawapermissions.handlers.ESHandler;
 import jawamaster.jawapermissions.utils.ESRequestBuilder;
@@ -47,7 +48,15 @@ public class PlayerPreJoin implements Listener {
                         //+ LocalDateTime.parse(((CharSequence) (((Map<String, Object>) playerData.get("current-ban"))).get("end-of-ban"))).format(DateTimeFormatter.ISO_DATE_TIME);
                 }
                 event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, message);   
-            }     
-        } 
+            }
+            
+            //Should speed things up moving this from join event to prejoin event
+            JawaPermissions.playerRank.put(event.getUniqueId(), rawSearchData.getRank());
+        } else if (JawaPermissions.autoElevate.containsKey(event.getUniqueId())){ //Check for auto elevation
+            JawaPermissions.playerRank.put(event.getUniqueId(), JawaPermissions.autoElevate.get(event.getUniqueId()));
+            
+        } else {
+            JawaPermissions.playerRank.put(event.getUniqueId(), "guest"); // TODO get basic rank from immunity levels
+        }
     }
 }

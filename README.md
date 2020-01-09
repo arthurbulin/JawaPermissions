@@ -35,33 +35,33 @@ etc.
 ## Commands and Permissions
 
 uuid:
-  description: This command returns the UUID of a user.
-  usage: /uuid <online user>
-  permission: jawapermissions.getuuid
+description: This command returns the UUID of a user.
+usage: /uuid <online user>
+permission: jawapermissions.getuuid
 
 setrank:
-  description: This command will set the player rank.
-  usage: /setrank <-[o]> -p <user>  -r <rank>
-  permission: jawapermissions.setrank
+description: This command will set the player rank.
+usage: /setrank <-[o]> -p <user>  -r <rank>
+permission: jawapermissions.setrank
 
 ban:
-  description: Will ban a player
-  usage: /ban <-[u|s]> -p <playername> -r <reason for ban> [<-d|h|m> <integer>] [<-b> <your username>]
-  permission: jawapermissions.ban
+description: Will ban a player
+usage: /ban <-[u|s]> -p <playername> -r <reason for ban> [<-d|h|m> <integer>] [<-b> <your username>]
+permission: jawapermissions.ban
 
 unban:
-  description: Will unban a player.
-  usage: /unban -p <playername> -r <reason for unban>
-  permission: jawapermissions.unban
+description: Will unban a player.
+usage: /unban -p <playername> -r <reason for unban>
+permission: jawapermissions.unban
 
 reloadperms:
-  description: Reloads the permissions from disk and recaches them.
-  permission: jawapermissions.reload
+description: Reloads the permissions from disk and recaches them.
+permission: jawapermissions.reload
 
 who:
-  description: Gives relevant user data.
-  usage: /who <online player>
-  permission: jawapermissions.who
+description: Gives relevant user data.
+usage: /who <online player>
+permission: jawapermissions.who
 
 ## Built With
 

@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import jawamaster.jawapermissions.PlayerDataObject;
 import jawamaster.jawapermissions.handlers.ESHandler;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -38,20 +39,24 @@ public class whoCommand implements CommandExecutor {
 
         } else if (arg3.length >= 1){
             if (commandSender.hasPermission("jawapermissions.who.detail")) {
-                
+                Player target = Bukkit.getServer().getPlayer(arg3[0]);
+
+                if (target == null) {
+                    PlayerDataObject pdObject = ESHandler.findOfflinePlayer(arg3[0], true);
+                    if (pdObject != null) {
+                        displayerUserData(pdObject);
+                    }
+                } else {
+                    try {
+                        ESHandler.whoLookUp(commandSender, target);
+                    } catch (IOException ex) {
+                        Logger.getLogger(whoCommand.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }   
+
                 //Is user offline
                     //get uuid and player data via search
                 //if online
-                    //get UUID from player object and search
-                
-                
-                
-                Player target = Bukkit.getServer().getPlayer(arg3[0]);
-                try {
-                    ESHandler.whoLookUp(commandSender, target);
-                } catch (IOException ex) {
-                    Logger.getLogger(whoCommand.class.getName()).log(Level.SEVERE, null, ex);
-                }
             } else {
                 commandSender.sendMessage(ChatColor.DARK_RED + "You do not have permission to perform a detailed lookup.");
             }
@@ -59,6 +64,10 @@ public class whoCommand implements CommandExecutor {
         }
         
         return true;
+    }
+    
+    private static void displayerUserData(PlayerDataObject pdObject){
+        
     }
     
 }

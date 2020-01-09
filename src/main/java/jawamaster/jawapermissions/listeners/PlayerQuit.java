@@ -10,6 +10,7 @@ import java.time.format.DateTimeFormatter;
 import jawamaster.jawapermissions.JawaPermissions;
 import jawamaster.jawapermissions.handlers.ESHandler;
 import org.bukkit.Bukkit;
+import org.bukkit.Server;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -25,6 +26,7 @@ public class PlayerQuit implements Listener {
     @EventHandler
     public static void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
+        Bukkit.getServer().getPluginManager().unsubscribeFromPermission(Server.BROADCAST_CHANNEL_USERS, player);
         
          Bukkit.getScheduler().runTaskAsynchronously(JawaPermissions.plugin, new Runnable() {
              @Override

@@ -31,29 +31,38 @@ public class PlayerDataHandler {
     }
     
     /** Creates the player data for committing to the ElasticSearch index.
-     * @param name
-     * @param ip
+     * @param player
      * @return
      */
-    public static JSONObject firstTimePlayer(String name, String ip){
+    public static JSONObject firstTimePlayer(Player player){
         JSONObject playerData = new JSONObject();
         playerData.put("first-login", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         playerData.put("last-login", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         playerData.put("last-logout", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         playerData.put("play-time", 0);
         
-        playerData.put("name", name);
-        playerData.put("name-data", nameData(name, new JSONArray()));
-        playerData.put("rank", "guest"); //TODO pull basic rank from permissions files and immunity levels
+        playerData.put("name", player.getName());
+        playerData.put("name-data", nameData(player.getName(), new JSONArray()));
         
         playerData.put("banned", false);
         playerData.put("nick", "");
         playerData.put("nick-data", new JSONArray());
-        playerData.put("tag", "false");
+        playerData.put("tag", "");
         playerData.put("star", "");
-        playerData.put("ip", ip);
-        playerData.put("ips",ipData(ip, new JSONArray()));
+        playerData.put("ip", player.getAddress().getAddress().toString());
+        playerData.put("ips",ipData(player.getAddress().getAddress().toString(), new JSONArray()));
 
+
+        if (JawaPermissions.autoElevate.containsKey(player.getUniqueId())) {
+            playerData.put("rank", JawaPermissions.autoElevate.get(player.getUniqueId()));
+            player.sendMessage(ChatColor.GREEN + " > Your UUID has been tagged by the server's auto elevation protocol. You have been issued the rank of: " + JawaPermissions.autoElevate.get(player.getUniqueId()));
+        } else {
+            playerData.put("rank", "guest"); //TODO pull basic rank from permissions files and immunity levels
+        }
+
+        
+        
+        
         if (JawaPermissions.debug){
             System.out.print(JawaPermissions.pluginSlug + handlerSlug + "firstTimePlayer data created as follows: " + playerData.toString());
         }

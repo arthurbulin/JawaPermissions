@@ -15,9 +15,12 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import jawamaster.jawapermissions.JawaPermissions;
 import jawamaster.jawapermissions.PlayerDataObject;
+import jawamaster.jawapermissions.events.PlayerRankChange;
 import jawamaster.jawapermissions.handlers.ESHandler;
 import jawamaster.jawapermissions.handlers.PlayerDataHandler;
 import jawamaster.jawapermissions.utils.ArgumentParser;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.command.ConsoleCommandSender;
 
 /**
@@ -130,10 +133,14 @@ public class setRank implements CommandExecutor {
 
         if (target != null){
             ESHandler.asyncUpdateData(target, PlayerDataHandler.createPlayerRankChangeData(targetRank, parsedArguments.get("r"), adminUUID));
+            JawaPermissions.playerRank.put(target.getUniqueId(), parsedArguments.get("r"));
+            Bukkit.getServer().getPluginManager().callEvent(new PlayerRankChange(target, parsedArguments.get("r")));
+            target.sendMessage(ChatColor.GREEN + " > Your rank has been changed to " + parsedArguments.get("r"));
         } else {
             
             ESHandler.asyncUpdateData(targetUUID, PlayerDataHandler.createPlayerRankChangeData(targetRank, parsedArguments.get("r"), adminUUID));
         }
+        commandSender.sendMessage(ChatColor.GREEN + " > " + target.getDisplayName() + "'s rank has been changed to " + parsedArguments.get("r") );
 
         return true;
     }

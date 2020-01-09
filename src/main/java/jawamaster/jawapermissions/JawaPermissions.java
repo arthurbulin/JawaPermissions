@@ -24,6 +24,7 @@ import jawamaster.jawapermissions.handlers.PlayerDataHandler;
 import jawamaster.jawapermissions.listeners.PlayerJoin;
 import jawamaster.jawapermissions.listeners.PlayerQuit;
 import jawamaster.jawapermissions.commands.whoCommand;
+import jawamaster.jawapermissions.handlers.FileHandler;
 import jawamaster.jawapermissions.listeners.AsyncPlayerKickListener;
 import jawamaster.jawapermissions.listeners.PlayerPreJoin;
 import org.apache.http.HttpHost;
@@ -53,6 +54,7 @@ public class JawaPermissions extends JavaPlugin {
     //Declare HashMap Storage for the loaded Permissions
     public static HashMap<UUID, String> playerRank;
     public static HashMap<String, Integer> immunityLevels;
+    public static HashMap<UUID, String> autoElevate;
     
     //New rank object method
     public static Map<String, Rank> rankMap;
@@ -95,6 +97,8 @@ public class JawaPermissions extends JavaPlugin {
         
         //Store the rank objects here
         rankMap = new HashMap();
+        
+        autoElevate = FileHandler.getAutoElevateList();
         
         //Load permissions. Try-catch to deal with possible exceptions.
         try {

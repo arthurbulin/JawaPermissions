@@ -7,7 +7,10 @@ package jawamaster.jawapermissions.utils;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import org.bukkit.ChatColor;
+import org.bukkit.command.CommandSender;
 
 /** Evaluates a String[] for '-' arguments and their values.
  *
@@ -31,6 +34,34 @@ public class ArgumentParser {
         //Complete and return parsed arguments object
         return parse((Object[]) indexes[0], (Object[]) indexes[1], diffs, args);
 
+    }
+    
+    /** Validates the parsed arguments with the arguments the command accepts.
+     * Will return false and send an error message to the commandSender in the event
+     * an unknown flag is found. Otherwise this returns true if all checks out. This will validate
+     * composite flags (flags a, b, and c listed as abc) so long as the individual flags are in the
+     * HashSet and as well as "flags".
+     * @param commandSender
+     * @param parsedArguments
+     * @param acceptedArgs
+     * @return 
+     */
+    public static boolean validateArguments(CommandSender commandSender, HashMap<String, String> parsedArguments, HashSet<String> acceptedArgs){
+
+        for (String key : parsedArguments.keySet()) {
+            if (!acceptedArgs.contains(key)) {
+                commandSender.sendMessage(ChatColor.RED + " > Error: Unknown flag found: " + key);
+                return false;
+            } else if (key.equals("flags")) {
+                for (char ch : parsedArguments.get("flags").toCharArray()) {
+                    if (!acceptedArgs.contains(String.valueOf(ch))) {
+                        commandSender.sendMessage(ChatColor.RED + " > Error: Unknown flag found: " + String.valueOf(ch));
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     private static Object[] getIndexes(String[] args) {

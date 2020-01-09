@@ -97,6 +97,7 @@ public class banPlayer implements CommandExecutor {
             return true;
         }
 
+        // TODO use the new argument parser validateArguments for this
         //Assess flags
         parsedArguments.keySet().forEach((key) -> {
             if (!acceptedFlags.contains(key)) {

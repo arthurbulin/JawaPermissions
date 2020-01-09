@@ -58,12 +58,24 @@ public class Rank {
     
     public boolean hasPermission(String world, String perm) {
         //System.out.println("Has check. World: " + world + " Perm: "+perm);
+        if (!this.permissions.containsKey(world)){
+            //System.out.println(JawaPermissions.pluginSlug + "No permissions for " + world + " assuming default permissions for world.");
+            world = "world"; //Short circuit and assume the default world permissions for this
+        }
+        
         if (this.permissions.get(world).contains(perm)) return !hasProhibition(world, perm);
         else if (this.permissions.get(world).contains("*") || this.permissions.get(world).contains("jawapermissions.all")) return !hasProhibition(world, perm);
         else {
             if ("*".equals(perm)) return false; //Because fucking perworld inventory checks if player has * for some damn reason
             
-            String testPerm = perm.substring(0, perm.lastIndexOf("."))+".*";
+            //System.out.println("Perm:" + perm);
+            String testPerm;
+            if (perm.contains(".")) {
+                testPerm = perm.substring(0, perm.lastIndexOf("."))+".*";
+            } else {
+                testPerm = perm;
+            }
+            //System.out.println("Testperm: " + testPerm);
             
             if (this.permissions.get(world).contains(testPerm)) {
                 this.permissions.get(world).add(perm); //This will add the truncated wildcard perm to the perm set and speed up checks. Next call will not need to loop
