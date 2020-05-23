@@ -13,7 +13,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.json.simple.parser.ParseException;
 
 /**
  *
@@ -27,7 +26,7 @@ public class reloadPermissions implements CommandExecutor {
             PermissionsHandler.reload();
             if (commandSender instanceof Player) ((Player) commandSender).sendMessage("Permissions reload called.");
             else System.out.println("Permissions reload called.");
-        } catch (ParseException | IOException ex) {
+        } catch (IOException ex) {
             Logger.getLogger(reloadPermissions.class.getName()).log(Level.SEVERE, null, ex);
         }
         

@@ -21,7 +21,7 @@ public class testCommand implements CommandExecutor {
 
         
         System.out.println("playerRanks: " + JawaPermissions.playerRank);
-        System.out.println("immunitylevels; " + JawaPermissions.immunityLevels);
+        //System.out.println("immunitylevels; " + JawaPermissions.immunityLevels);
         
 //        JawaPermissions.plugin.getServer().getScheduler().runTaskAsynchronously(JawaPermissions.plugin, new Runnable() {
 //            @Override

@@ -1,6 +1,7 @@
 name: JawaPermissions
 main: jawamaster.jawapermissions.JawaPermissions
-version: 1.0
+description: A permissions and player manegment plugin using the ElasticSearch Database.
+version: 1.2
 commands:
   uuid:
     description: This command returns the UUID of a user.
@@ -8,15 +9,15 @@ commands:
     permission: jawapermissions.getuuid
   setrank:
     description: This command will set the player rank.
-    usage: /setrank <user> <rank>
+    usage: 'Run /setrank with no arguments to see a full help'
     permission: jawapermissions.setrank
   ban:
     description: Will ban a player
-    usage: /ban <user> <reason> [time]
+    usage: 'Run /ban with no arguments to see a full help'
     permission: jawapermissions.ban
   unban:
     description: Will unban a player.
-    usage: /unban <user>
+    usage: 'Run /unban with no arguments to see a full help'
     permission: jawapermissions.unban
   testcommand:
     permission: jawapermissions.testcommand
@@ -26,3 +27,49 @@ commands:
   who:
     description: Gives relavant user data.
     permission: jawapermissions.who
+  baninfo:
+    description: "Gives a user information about another's ban"
+    permission: jawapermissions.baninfo
+  alt:
+    description: "Gives staff information about possible account alternets"
+    usage: "/alt <player>"
+    permission: jawapermissions.alt
+  playerinfo:
+    description: "Gives staff detailed player info"
+    permission: jawapermissions.playerinfo
+  rankinfo:
+    description: "Provides information about a rank"
+    usage: "/rankinfo [description|requirements] <rank>"
+    permission: jawapermissions.rankinfo
+    
+permissions:
+  jawapermissions.alt:
+    description: "Allows searching for alt accounts based on IP address"
+    default: op
+  jawapermissions.baninfo:
+    description: "Allows viewing of ban data"
+    default: op
+  jawapermissions.who:
+    description: "Allows a user to see who is online"
+    default: true
+  jawapermissions.who.detail:
+    description: "Allows an administrative user to see detailed information about a player"
+    default: op
+  jawapermissions.reload:
+    description: "Allows an administrative user to reload rank permissions, immunity levels, rank descriptions, and colors"
+    default: op
+  jawapermissions.ban:
+    description: "Allows an administrative user to ban a user"
+    default: op
+  jawapermissions.unban:
+    description: "Allows an administative user to unban a user"
+    default: op
+  jawapermissions.setrank:
+    description: "Allows an administative user to set the rank of a user"
+    default: op
+  jawapermissions.uuid:
+    description: "Allows an administative user to see the UUID of a player"
+    default: op
+  jawapermissions.rankinfo:
+    description: "Allows a player to see the description or requirements for a rank"
+    deafult: true

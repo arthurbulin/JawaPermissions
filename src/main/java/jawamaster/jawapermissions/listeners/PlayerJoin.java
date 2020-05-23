@@ -7,28 +7,20 @@ package jawamaster.jawapermissions.listeners;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.logging.Level;
+import java.util.UUID;
 import jawamaster.jawapermissions.JawaPermissibleBase;
 import jawamaster.jawapermissions.JawaPermissions;
-import jawamaster.jawapermissions.PlayerDataObject;
-import jawamaster.jawapermissions.events.PlayerInfoLoaded;
-import jawamaster.jawapermissions.handlers.ESHandler;
-import static jawamaster.jawapermissions.handlers.ESHandler.indexPlayerData;
 import jawamaster.jawapermissions.handlers.FileHandler;
-import jawamaster.jawapermissions.handlers.PlayerDataHandler;
-import jawamaster.jawapermissions.utils.ESRequestBuilder;
+import jawamaster.jawapermissions.handlers.PermissionsHandler;
+import net.jawasystems.jawacore.PlayerManager;
+import net.jawasystems.jawacore.dataobjects.PlayerDataObject;
+import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.elasticsearch.action.search.MultiSearchRequest;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 /**
  *
@@ -51,86 +43,30 @@ public class PlayerJoin implements Listener {
     public static void onPlayerJoin(PlayerJoinEvent event) throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException, IOException {
 
         Player target = event.getPlayer(); //Get player from event
-        boolean installed = ESHandler.alreadyIndexed(target.getUniqueId());
-
+       
         //Patch the player with the permissible base
         Class ply = target.getClass().getSuperclass(); //Get the player class
         Field field = ply.getDeclaredField("perm"); //Get the perm field for modification
         field.setAccessible(true); //Make the field accessible if it isn't already
         field.set(target, new JawaPermissibleBase(target, JawaPermissions.getPlugin())); //Set the player's perm field to the PermissibleBase
+        
+        PlayerDataObject pdObject = PlayerManager.getPlayerDataObject(target);
+        //System.out.println("User is in autoelevate list:" + JawaPermissions.autoElevate.containsKey(target.getUniqueId()));
+        if (JawaPermissions.autoElevate.containsKey(target.getUniqueId())) { //Check for auto elevation
+            pdObject.setRank(JawaPermissions.autoElevate.get(target.getUniqueId()), UUID.fromString("00000000-0000-0000-0000-000000000000"), PermissionsHandler.getRankColor(JawaPermissions.autoElevate.get(target.getUniqueId())));
+            target.sendMessage(ChatColor.GREEN + " > You have been tagged by the server's autoelevation protocol. You have been given the rank of " + ChatColor.BLUE + PermissionsHandler.getRankColor(JawaPermissions.autoElevate.get(target.getUniqueId())) + JawaPermissions.autoElevate.get(target.getUniqueId()) + ChatColor.GREEN + ". Disconnect and rejoin to get your new rank.");
+            JawaPermissions.autoElevate.remove(target.getUniqueId());
+            FileHandler.saveAutoElevateList();
+            
+        }
 
         //Subscribe user to correct chat permission channels.
         if (target.hasPermission("jawachat.opchat") || target.isOp()) {
             Bukkit.getServer().getPluginManager().subscribeToPermission(Server.BROADCAST_CHANNEL_ADMINISTRATIVE, target);
         }
         Bukkit.getServer().getPluginManager().subscribeToPermission(Server.BROADCAST_CHANNEL_USERS, target);
-        target.sendMessage(ChatColor.GREEN + " > You have been loaded!");
-
-        //Should async update the player's data
-        Bukkit.getScheduler().runTaskAsynchronously(JawaPermissions.getPlugin(), new Runnable() {
-            @Override
-            public void run() {
-                if (installed) {
-
-                    /* TODO I think the alreadyIndexed function can be replaced and 
-                    just call for a playerdata object and if null then install instead 
-                    of running a synchronous search first then another asyncsearch and index.                    
-                    */
-                    MultiSearchRequest multiSearchRequest = new MultiSearchRequest();
-                    multiSearchRequest.add(ESRequestBuilder.buildSearchRequest("players", "_id", target.getUniqueId().toString()));
-                    PlayerDataObject pdObject = ESHandler.runMultiIndexSearch(multiSearchRequest, new PlayerDataObject(target.getUniqueId()));
-
-                    System.out.print(pdObject.getRank());
-                    Bukkit.getServer().getPluginManager().callEvent(new PlayerInfoLoaded(target, pdObject));
-
-                    JSONObject updateData = new JSONObject();
-
-                    Bukkit.getLogger().log(Level.FINEST, "Recording last login date for player: {0} as {1}", new Object[]{target.getUniqueId().toString(), LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)});
-                    updateData.put("last-login", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-
-                    //update player name and ip
-                    if (pdObject.getName().equals(target.getName())) {
-                        updateData.put("name", target.getName());
-                    }
-                    if (!pdObject.getIP().equals(target.getAddress().getAddress().toString())) {
-                        updateData.put("ip", target.getAddress().getAddress().toString());
-                    }
-
-                    JSONArray nameData = PlayerDataHandler.nameData(target.getName(), pdObject.getNameArray());
-                    System.out.print("player join:" + nameData);
-                    if (nameData != null) {
-                        System.out.println("isn't null:"+nameData);
-                        updateData.put("name-data", nameData);
-                    }
-
-                    JSONArray ips = PlayerDataHandler.ipData(target.getAddress().getAddress().toString(), pdObject.getIPArray());
-                    if (ips != null) {
-                        updateData.put("ips", ips);
-                    }
-
-                    ESHandler.asyncUpdateData(target, updateData);
-
-                } else { //if user isn't installed this is a new user. install them
-                    JSONObject newPlayerData = PlayerDataHandler.firstTimePlayer(target);
-
-                    indexPlayerData(target.getUniqueId(), newPlayerData);
-                    
-                    PlayerDataObject pdObject = new PlayerDataObject(target.getUniqueId());
-                    pdObject.addPlayerData(newPlayerData.toMap());
-                    
-                    Bukkit.getServer().getPluginManager().callEvent(new PlayerInfoLoaded(target, pdObject));
-                    //Once the player is indexed we don't need the elevation list entry anymore
-                    if (JawaPermissions.autoElevate.containsKey(target.getUniqueId())){
-                        JawaPermissions.autoElevate.remove(target.getUniqueId());
-                        FileHandler.saveAutoElevateList();
-                    }
-                    //Moved all ranking to prejoin to speed up join and allow permisions checking on real join
-                    //JawaPermissions.playerRank.put(target.getUniqueId(), (String) newPlayerData.get("rank"));
-                    target.sendMessage(ChatColor.GREEN + " > You have been installed!");
-
-                }
-            }
-        });
+        
+        //Moved all update functions into JawaCore as these are not specific to permissions
 
     }
 

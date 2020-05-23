@@ -10,6 +10,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import net.md_5.bungee.api.ChatColor;
+
 
 /**
  *
@@ -18,17 +20,30 @@ import java.util.Set;
 public class Rank {
     private final String rankName;
     private final int immunity;
+    private final ChatColor color;
+    private final String description;
+    private final String requirements;
     
     //Each map will contain an entry named after the world and it's data will be a set containing either perms or prohibs
     private final Map<String, Set<String>> permissions;
     private final Map<String, Set<String>> prohibitions;
     
+//    public Rank (String rankName, int immunity){
+//        this.rankName = rankName;
+//        this.immunity = immunity;
+//        this.permissions = new HashMap();
+//        this.prohibitions = new HashMap();
+//        this.color = ChatColor.GRAY;
+//    }
     
-    public Rank (String rankName, int immunity) {
+    public Rank (String rankName, int immunity, String color, String description, String requirements) {
         this.rankName = rankName;
         this.immunity = immunity;
+        this.description = description;
+        this.requirements = requirements;
         this.permissions = new HashMap();
         this.prohibitions = new HashMap();
+        this.color = ChatColor.getByChar(color.charAt(0));
     }
    
     //Add data methods
@@ -136,6 +151,18 @@ public class Rank {
     
     public int getImmunity(){
         return this.immunity;
+    }
+    
+    public ChatColor getChatColor(){
+        return this.color;
+    }
+    
+    public String getDescription() {
+        return description;
+    }
+    
+    public String getRequirements(){
+        return requirements;
     }
     
     //Remove data methods

@@ -22,7 +22,6 @@ import jawamaster.jawapermissions.handlers.PermissionsHandler;
 public class JawaPermissibleBase extends PermissibleBase {
 
     private final Player player;
-    private final PermissionsHandler handler;
     
     //Testing something here
     private static String rank;
@@ -32,7 +31,6 @@ public class JawaPermissibleBase extends PermissibleBase {
     public JawaPermissibleBase (Player player, JawaPermissions plugin) {
         super(player);
         this.player = player;
-        this.handler = JawaPermissions.permissionsHandler;
     }
     
     @Override
@@ -77,7 +75,7 @@ public class JawaPermissibleBase extends PermissibleBase {
     public boolean hasPermission(String arg0) {
         //This will give op all permissions
         //return permissionsHandler.has(player, arg0.toLowerCase());
-        return isOp() || handler.has(player, arg0.toLowerCase());
+        return isOp() || PermissionsHandler.has(player, arg0.toLowerCase());
     }
     
     @Override
@@ -97,7 +95,7 @@ public class JawaPermissibleBase extends PermissibleBase {
 
     @Override
     public boolean isOp() {
-        return isBaseOp() || handler.has(player, "bukkit.base.op");
+        return isBaseOp() || PermissionsHandler.has(player, "bukkit.base.op");
     }
 
     @Override
@@ -109,18 +107,6 @@ public class JawaPermissibleBase extends PermissibleBase {
     
     private boolean isBaseOp(){
         return operator;
-    }
-    
-    public String getRank(){
-        return rank;
-    }
-    
-    public void setRank(String rank){
-        this.rank = rank;
-    }
-    
-    public String getDisplayName() {
-        return "jawa";
     }
 
 }

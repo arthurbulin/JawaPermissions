@@ -1,41 +1,199 @@
 guest:
+  color: 7
+  immunity: 7
+  description: "This is where everyone starts. Command permissions are limited. Follow the rules, build something you like, and have fun! (2-3 avg. days for promotion to next rank)"
   permissions:
+    - jawapermissions.rankinfo
     - bukkit.command.help
-    - jawapermissions.getuuid
-    - jawapermissions.setrank
+    - jawamaster.foxcommands.spawn
+    - minecraft.command.help
+    - multiverse.access.world
+    - group.guest
+    - jawacommands.spawn
+    - jawacommands.spawn.guest
+    - tg.user
+  prohibitions:
+    - multiverse.access.world_nether
 builder:
+  color: a
+  immunity: 6
+  description: "This rank has gained access to the rest of the world. Players of this rank have shown staff they can follow rules and be a productive member of the server. (2-4 weeks avg. for promotion to next rank)"
+  inherits: guest
   permissions:
-    - bukkit.command.help
-superbuilder:
+    - jawacommands.back
+    - tradeshop.help
+    - tradeshop.create
+    - tradeshop.who
+    - lwc.protect
+    - lwc.shownotices
+    - lwc.flag.*
+    - group.builder
+    - jawachat.pm
+    - jawacommands.home.add
+    - jawacommands.home.bed
+    - jawacommands.home.del
+    - jawacommands.home.list
+    - jawacommands.home.info
+    - jawacommands.home
+    - jawapermissions.home.add
+    - jawapermissions.home.bed
+    - jawapermissions.home.del
+    - jawapermissions.home.list
+    - jawapermissions.home.info
+    - jawapermissions.home
+    - warps.warp
+    - jawacommands.gothere
+    - jawacommands.comehere
+    - jawacommands.accept
+    - jawacommands.tpaccept
+    - worldedit.info
+    - multiverse.access.world_the_end
+    - multiverse.access.world_nether
+    - multiverse.access.games
+    - jawachat.me
+    - jawachat.pm
+    - mobarena.arenas.*
+    - mobarena.use
+    - mobarena.use.join
+    - mobarena.use.leave
+    - mobarena.use.spec
+    - mobarena.use.arenalist
+    - mobarena.use.playerlist
+    - mobarena.use.notready
+    - mobarena.use.class
+    - mobarena.classes.*
+  prohibitions:
+    - group.guest
+    - jawacommands.spawn.guest
+advbuilder:
+  color: 2
+  immunity: 5
+  description: "This rank has obtained creative access. Players of this rank have shown exceptional skills building and participating with the community. (4-6 months avg. for promotion to next rank)"
+  inherits: builder
   permissions:
-    - bukkit.command.help
+    - gamemode.toggle
+    - gamemode.survival
+    - gamemode.creative
+    - jawacommands.fullbright
+    - jawapermissions.dummy
+  prohibitions:
+    - jawacommands.spawn.guest
 architect:
+  color: 3
+  immunity: 4
+  description: "This rank is granted WorldEdit access. Players of this rank have completed a project showing immense creativity and passion on top of being prime role models for the server. (There are no building ranks beyond Architect)"
+  inherits: advbuilder
   permissions:
-    - bukkit.command.help
+    - wesui.command
+    - wesui.command.reload
+    - wesui.command.toggle
+    - wesui.command.toggleclipboard
+    - jawapermissions.dummy
+    - worldedit.*
+    - worldedit.brush.*
+    - worldedit.navigation.*
+  prohibitions:
+    - jawacommands.spawn.guest
 trainee:
+  color: b
+  immunity: 3
+  inherits: architect
   permissions:
+    - jawachat.mute
+    - jawacommands.freeze
+    - jawachat.opchat
+    - jawacommands.warp.other
+    - warps.admin.visitall
+    - minecraft.command.teleport
+    - OpenInv.*
+    - lwc.*
+    - jawapermissions.ban
+    - jawapermissions.who
+    - jawapermissions.who.*
+    - minecraft.command.gamemode.override
+    - bukkit.command.gamemode
+    - bukkit.command.gamemode.survival
+    - bukkit.command.gamemode.creative
+    - bukkit.command.gamemode.adventure
+    - multiverse.access.*
+    - minecraft.command.tp
+    - worldedit.*
+    - worldedit.brush.*
+    - mv.bypass.gamemode.*
+    - worldedit.navigation.*
+    - logblock.*
+    - vanish.see
+    - vanish.vanish
+    - vanish.vanish.*
+    - vanish.list
+    - vanish.nopickup
+    - vanish.nofollow
+    - vanish.notrample
+    - vanish.nointeract
+    - vanish.nohunger
+    - vanish.preventdamage
+    - vanish.statusupdates
+    - vanish.adminalerts
+    - vanish.silentchests
+    - vanish.toggle.*
+    - serverrules.force
+    - jawachat.opchat
+    - jawachat.setnick
+    - jawachat.settag
+    - jawachat.setstar
     - jawapermissions.getuuid
     - bukkit.command.help
+  prohibitions:
+    - vanish.*
+    - jawacommands.spawn.guest
 admin:
+  color: c
+  immunity: 2
   inherits: trainee
   permissions:
+    - tradeshop.admin
+    - tradeshop.create.infinite
+    - multiverse.portal.*
+    - jawapermissions.setrank
+    - jawapermissions.unban
+    - jawapermissions.reloadperms
+    - jawacommands.warps.admin.*
+    - jawachat.setnick
     - bukkit.command.help
+    - worldguard.region.bypass.world
+    - worldguard.region.bypass.world_nether
+    - worldguard.region.bypass.world_the_end
+    - worldguard.chest-protection.override.*
+    - vanish.see
+    - vanish.vanish
+    - vanish.vanish.*
+    - vanish.list
+    - vanish.nopickup
+    - vanish.nofollow
+    - vanish.notrample
+    - vanish.nointeract
+    - vanish.nohunger
+    - vanish.preventdamage
+    - vanish.statusupdates
+    - vanish.adminalerts
+    - vanish.silentchests
+    - vanish.toggle.*
+  prohibitions:
+    - vanish.*
+    - jawacommands.spawn.guest
 superadmin:
+  color: 4
+  immunity: 1
   inherits: admin
   permissions:
-    - jawamaster.foxcommands.motd.edit
-    - ctl.darkred
-    - jawapermissions.ban
-    - jawapermissions.testcommand
+    - jawapermissions.all
   prohibitions:
-    - perworldinventory.bypass.*
-    - voxelsniper.*
+    - jawacommands.spawn.guest
     - mv.bypass.gamemode.*
-    - ctl.red
 owner:
-  inherits: superadmin
+  color: d
+  immunity: 0
+  description: "The end all be all of ranks. You can do anything and everything."
+  requirements: "Be the owner, or be trusted above all else"
   permissions:
-    - jawapermissions.getuuid
-    - ctl.darkpurple
-  prohibitions:
-    - ctl.darkred
+    - jawapermissions.all

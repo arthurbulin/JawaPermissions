@@ -6,135 +6,70 @@
 package jawamaster.jawapermissions.commands;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.UUID;
 import jawamaster.jawapermissions.JawaPermissions;
-import jawamaster.jawapermissions.PlayerDataObject;
-import jawamaster.jawapermissions.handlers.ESHandler;
-import jawamaster.jawapermissions.handlers.PlayerDataHandler;
-import jawamaster.jawapermissions.utils.ArgumentParser;
-import jawamaster.jawapermissions.utils.ESRequestBuilder;
+import net.jawasystems.jawacore.PlayerManager;
+import net.jawasystems.jawacore.dataobjects.PlayerDataObject;
+import net.jawasystems.jawacore.utils.ArgumentParser;
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.search.MultiSearchRequest;
-import org.elasticsearch.action.update.UpdateRequest;
-import org.json.JSONObject;
 
 /**
  *
  * @author Arthur Bulin
  */
 public class unbanPlayer implements CommandExecutor {
-    private String target;
-    private HashMap<String, Object> playerData;
-    private PlayerDataObject pdObject;
-    private MultiSearchRequest multiSearchRequest;
-    private JSONObject topLevelBanObject;
+    public final String[] USAGE = new String[]{ChatColor.GREEN + " > " + ChatColor.YELLOW + "/unban -p <playername> -r <reason for unban> [-b] <Your user name>",
+        ChatColor.GREEN + " > " + ChatColor.YELLOW + "p: Player Minecraft Name, or Nickname",
+        ChatColor.GREEN + " > " + ChatColor.YELLOW + "r: Reason for the player's unban",
+        ChatColor.GREEN + " > " + ChatColor.YELLOW + "b: Used from the console to specify the name of who undid the ban"};
+    public HashSet<String> acceptedFlags = new HashSet(Arrays.asList("p","r","b"));
 
     @Override
     public boolean onCommand(CommandSender commandSender, Command arg1, String arg2, String[] arg3) {
-        
-        JawaPermissions.plugin.getServer().getScheduler().scheduleSyncDelayedTask(JawaPermissions.plugin, new Runnable() {
-            @Override
-            public void run() {
-                UnbanPlayer(commandSender, arg3);
-            }
-        });
-        
-        return true;
-
-    }
-    
-    public boolean UnbanPlayer(CommandSender commandSender, String[] arg3){
-        String usage = "/unban -p <playername> -r <reason for unban>";
-        
-        HashSet<String> acceptedFlags = new HashSet(Arrays.asList("p","r","b"));
-
-//###############################################################################
-// Validate command input
-//###############################################################################        
-
+        PlayerDataObject admin;
         //Parse the command arguments or if no arguments are sent out
-        if (arg3 == null) {
-            return true; //TODO see what happens when the command is run without arguments
+        if (arg3 == null || arg3.length == 0) {
+            commandSender.sendMessage(USAGE);
+            return true;
         }
+
         HashMap<String, String> parsedArguments = ArgumentParser.getArgumentValues(arg3);
         if (JawaPermissions.debug) System.out.println(JawaPermissions.pluginSlug + "[UnBanPlayer] parsedArguments: " + parsedArguments );
         
-        if (!parsedArguments.containsKey("p")) {
-            commandSender.sendMessage("Error: No player flag found! Usage: " + usage);
-            return true;
-        }
-        if (!parsedArguments.containsKey("r")) {
-            commandSender.sendMessage("Error: No reason flag found! Usage: " + usage);
-            return true;
-        }
-        if (parsedArguments.containsKey("b") && (commandSender instanceof Player)) {
-            commandSender.sendMessage("Error: The by(-b) flag is only used when unbanning from the console!");
+        // Validate that the flags are ones that this commands accepts
+        if (!ArgumentParser.validateArguments(commandSender, parsedArguments, acceptedFlags)) return true;
+        
+        admin = PlayerManager.getAdmin(commandSender, parsedArguments);
+        if (admin == null) {
             return true;
         }
 
-        parsedArguments.keySet().forEach((key) -> {
-            if (!acceptedFlags.contains(key)) {
-                commandSender.sendMessage("Error: Unknown flag found: " + key + "Usage: " + usage);
-            } else if (key.equals("flags")) {
-                for (char ch : parsedArguments.get("flags").toCharArray()) {
-                    if (!acceptedFlags.contains(ch)) {
-                        commandSender.sendMessage("Error: Unknown flag found: " + String.valueOf(ch) + "Usage: " + usage);
-
-                    }
-                }
-            }
-        });
+        // Validate that all the required flags are found
+        acceptedFlags.remove("b");
+        if (!ArgumentParser.validateCommandInput(commandSender, acceptedFlags, parsedArguments, USAGE)) return true;
         
-//###############################################################################
-//# Assess offline status for target of unban
-//###############################################################################
-            //find this mofos UUID. If it fails then target=null
-            target = ESHandler.findOfflinePlayer(parsedArguments.get("p")).getId();
-        
-        if (target == null) {
-            commandSender.sendMessage("Elastic Search failed to find that player's UUID! Please make sure you are using the correct username for when they were banned!");
-            commandSender.sendMessage("It is also possible that multipe players were found! Be exact!");
+        //Validate Player
+        PlayerDataObject target = PlayerManager.getPlayerDataObject(parsedArguments.get("p"));
+        if (target == null) { 
+            commandSender.sendMessage(ChatColor.RED + " > Error: That player wasn't found! Try their actual minecraft name instead of nickname.");
+            return true;
+        }
+        if (!target.isBanned()){
+            commandSender.sendMessage(ChatColor.RED + " > Error: That player isn't banned!");
             return true;
         }
         
-//###############################################################################
-//# Get player and ban data
-//###############################################################################
-        multiSearchRequest = new MultiSearchRequest();
-        multiSearchRequest.add(ESRequestBuilder.buildSearchRequest("players", "_id", target));
-
-        pdObject = ESHandler.runMultiIndexSearch(multiSearchRequest, new PlayerDataObject(UUID.fromString(target)));
+        target.unbanPlayer(admin, parsedArguments, LocalDateTime.now());
         
-        if (!pdObject.isBanned()){
-            commandSender.sendMessage("That player isn't banned! Can't unban.");
-            return true;
-        }
-        
-        String unbanDateTime = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-
-        topLevelBanObject = PlayerDataHandler.assembleUnBanData(commandSender, parsedArguments, unbanDateTime, pdObject.getLatestBanDate());
-        
-        JSONObject playerBanData = new JSONObject();
-        playerBanData.put("banned", false);
-        
-        //Build the bulk index request
-        BulkRequest bulkRequest = new BulkRequest();
-        
-        
-        UpdateRequest banIndexUpdate = ESRequestBuilder.updateRequestBuilder(topLevelBanObject, "bans", target, true);
-        UpdateRequest playerUpdate = ESRequestBuilder.updateRequestBuilder(playerBanData, "players", target, true);
-        bulkRequest.add(playerUpdate);
-        bulkRequest.add(banIndexUpdate);
-        
-        ESHandler.runAsyncBulkRequest(bulkRequest, commandSender);
+        commandSender.sendMessage(ChatColor.GREEN + " > " + target.getFriendlyName() + ChatColor.GREEN + " has been unbanned for: " + ChatColor.GRAY + parsedArguments.get("r"));
         
         return true;
     }
