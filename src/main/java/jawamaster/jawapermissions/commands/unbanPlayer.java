@@ -9,8 +9,6 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
-import java.util.UUID;
 import jawamaster.jawapermissions.JawaPermissions;
 import net.jawasystems.jawacore.PlayerManager;
 import net.jawasystems.jawacore.dataobjects.PlayerDataObject;
@@ -19,7 +17,6 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 
 /**
  *
@@ -64,6 +61,11 @@ public class unbanPlayer implements CommandExecutor {
         }
         if (!target.isBanned()){
             commandSender.sendMessage(ChatColor.RED + " > Error: That player isn't banned!");
+            return true;
+        }
+        if (target.isBanLocked()){
+            commandSender.sendMessage(ChatColor.RED + "> That player cannot be unbanned until the ban lock has been cleared.");
+            commandSender.sendMessage(ChatColor.GREEN + "> " + target.getFriendlyName() + ChatColor.GREEN + " has been ban locked by " + target.getBanLockAdmin() + ChatColor.GREEN + " for " + ChatColor.GOLD + target.getBanLockReason());
             return true;
         }
         

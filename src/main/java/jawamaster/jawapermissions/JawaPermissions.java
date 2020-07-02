@@ -27,6 +27,7 @@ import jawamaster.jawapermissions.commands.playerinfo.WhoCommand;
 import jawamaster.jawapermissions.handlers.FileHandler;
 import jawamaster.jawapermissions.listeners.AsyncPlayerKickListener;
 import jawamaster.jawapermissions.listeners.OnPlayerInfoLoaded;
+import net.jawasystems.jawacore.JawaCore;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.Configuration;
 import org.bukkit.event.Event;
@@ -106,7 +107,7 @@ public class JawaPermissions extends JavaPlugin {
     /** Loads the configuration file from storage and loads the values into static references within the plugin.
      */
     public void loadConfig(){
-        System.out.print(pluginSlug + "Loading configuration from file.");
+        //System.out.print(pluginSlug + "Loading configuration from file.");
         //Handle the config generation and loading
         this.saveDefaultConfig();
         config = this.getConfig();
@@ -118,6 +119,8 @@ public class JawaPermissions extends JavaPlugin {
         defaultWorld = config.getString("default-world");
         newPlayerMessage = config.getString("new-player-message", "You have been installed!");
 
+        JawaCore.receiveConfigurations(this.getClass().getName(), config);
+        //System.out.println(this.getClass().getName());
         if (debug){
             System.out.println(pluginSlug + "Debug is turned on! This is not recommended unless you are a dev or are tracking a problem!");
             System.out.println(pluginSlug + "If you are experiencing problems in a clean run environment please contact the dev on github.");

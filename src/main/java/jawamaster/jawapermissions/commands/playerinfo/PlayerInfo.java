@@ -134,8 +134,8 @@ public class PlayerInfo implements CommandExecutor {
 
                 msg.put(header);
 
-                //header
-                rankData.keySet().stream().map((date) -> {
+                //header //FIXME there seems to be errors generating on lines 153 and 159 due to the lambda expression.
+                for(String date : rankData.keySet()){
                     ComponentBuilder entry = new ComponentBuilder(" > ").color(ChatColor.GREEN)
                             .append(rankData.getJSONObject(date).getString("from-rank"))
                             .color(PermissionsHandler.getRankColor(rankData.getJSONObject(date).getString("from-rank")))
@@ -155,10 +155,35 @@ public class PlayerInfo implements CommandExecutor {
                     entry.append(" on ").color(ChatColor.GREEN)
                             .append(TimeParser.getHumanReadableDateTime(date, 1))
                             .color(ChatColor.BLUE);
-                    return entry;
-                }).forEachOrdered((entry) -> {
+                    
                     msg.put(entry.create());
-                });
+                }
+                
+                
+//                rankData.keySet().stream().map((date) -> {
+//                    ComponentBuilder entry = new ComponentBuilder(" > ").color(ChatColor.GREEN)
+//                            .append(rankData.getJSONObject(date).getString("from-rank"))
+//                            .color(PermissionsHandler.getRankColor(rankData.getJSONObject(date).getString("from-rank")))
+//                            .append(" -> ")
+//                            .color(ChatColor.GREEN)
+//                            .append(rankData.getJSONObject(date).getString("to-rank"))
+//                            .color(PermissionsHandler.getRankColor(rankData.getJSONObject(date).getString("to-rank")))
+//                            .append(" by ")
+//                            .color(ChatColor.GREEN);
+//                    if (rankData.getJSONObject(date).getString("changed-by").equals("00000000-0000-0000-0000-000000000000")) {
+//                        entry.append("Autoelevation")
+//                                .color(ChatColor.BLUE);
+//                    } else {
+//                        PlayerDataObject admin = PlayerManager.getPlayerDataObject(UUID.fromString(rankData.getJSONObject(date).getString("changed-by")));
+//                        entry.append(admin.getFriendlyName());
+//                    }
+//                    entry.append(" on ").color(ChatColor.GREEN)
+//                            .append(TimeParser.getHumanReadableDateTime(date, 1))
+//                            .color(ChatColor.BLUE);
+//                    return entry;
+//                }).forEachOrdered((entry) -> {
+//                    msg.put(entry.create());
+//                });
 
                 for (Object line : msg) {
                     sender.spigot().sendMessage((BaseComponent[]) line);
