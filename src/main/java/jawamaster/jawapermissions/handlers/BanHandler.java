@@ -141,13 +141,14 @@ public class BanHandler {
                 message.put(ChatColor.GREEN + "> Ban information for " + pdObject.getFriendlyName());
                 
                 BaseComponent[] latestBanData = new ComponentBuilder(" > ").color(ChatColor.GREEN)
+                        .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/baninfo info " + player + " " + pdObject.getLatestBanDate()))
                         .append(pdObject.getLatestBanDate())
                             .color(ChatColor.RED)
                             .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Latest Ban").create()))
                         .append(": ")
                             .color(ChatColor.GREEN)
                         .append(pdObject.getLatestBan().getString("reason")).color(ChatColor.WHITE)
-                            .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/baninfo info " + player + " " + pdObject.getLatestBanDate()))
+                            
                         .create();
                 message.put(latestBanData);
                 

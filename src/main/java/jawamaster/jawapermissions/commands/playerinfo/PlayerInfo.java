@@ -19,6 +19,7 @@ package jawamaster.jawapermissions.commands.playerinfo;
 import java.util.UUID;
 import jawamaster.jawapermissions.JawaPermissions;
 import jawamaster.jawapermissions.handlers.PermissionsHandler;
+import jawamaster.jawapermissions.handlers.PlayerInfoHandler;
 import net.jawasystems.jawacore.PlayerManager;
 import net.jawasystems.jawacore.dataobjects.PlayerDataObject;
 import net.jawasystems.jawacore.handlers.ESHandler;
@@ -55,7 +56,7 @@ public class PlayerInfo implements CommandExecutor {
             //Execute the following async
             switch (args[1]) {
                 case "alts":
-                    ipAltSearch(sender, target);
+                    PlayerInfoHandler.ipAltSearch(sender, target);
                     break;
                 case "ips":
                     getIPHistory(sender, target);
@@ -72,38 +73,7 @@ public class PlayerInfo implements CommandExecutor {
 
     }
 
-    private void ipAltSearch(CommandSender sender, PlayerDataObject target) {
-        Bukkit.getServer().getScheduler().runTaskAsynchronously(JawaPermissions.getPlugin(), (BukkitTask t) -> {
-            String ip = target.getIP();
-            SearchHit[] hits = ESHandler.runAltSearch(ip);
-            if (hits.length == 1) {
-                sender.sendMessage(ChatColor.GREEN + "> No alts were found for " + ChatColor.BLUE + target.getPlainNick());
-            } else {
 
-                BaseComponent[] header = new ComponentBuilder(ChatColor.GREEN + "> Possible alts for: " + ChatColor.BLUE + target.getName()).create();
-                sender.spigot().sendMessage(header);
-
-                for (SearchHit hit : hits) {
-                    if (!hit.getId().equals(target.getUniqueID().toString())) {
-                        JSONObject hitMap = new JSONObject(hit.getSourceAsMap());
-                        BaseComponent[] altInfo = new ComponentBuilder(ChatColor.GREEN + " > ")
-                                .append(hitMap.getString("name")).color(PermissionsHandler.getRankColor(hitMap.getString("rank")))
-                                .append(", with rank: ").color(ChatColor.GREEN)
-                                .append(hitMap.getString("rank")).color(PermissionsHandler.getRankColor(hitMap.getString("rank")))
-                                .reset()
-                                .append(" [Who is]")
-                                .color(ChatColor.BLUE)
-                                .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Who lookup").create()))
-                                .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/who " + hitMap.getString("name")))
-                                .create();
-
-                        sender.spigot().sendMessage(altInfo);
-                    }
-                }
-            }
-
-        });
-    }
 
     private void getIPHistory(CommandSender sender, PlayerDataObject target) {
         JSONArray ips = target.getIPArray();

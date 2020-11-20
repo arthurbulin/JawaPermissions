@@ -122,7 +122,7 @@ public class banPlayer implements CommandExecutor {
         }
 
         if (commandSender instanceof Player) {
-            ((Player) commandSender).sendMessage(ChatColor.GREEN + " > " + target.getDisplayName() + ChatColor.GREEN + " has been banned. Please ensure that you have entered a detailed reason. If not please repeat with -u to update ban.");
+            ((Player) commandSender).sendMessage(ChatColor.GREEN + " > " + target.getDisplayName() + ChatColor.GREEN + " has been banned. Please ensure that you have entered a detailed reason. If not please unban and repeat with the updated reason.");
         } else {
             System.out.println(target.getDisplayName() + " has been banned. Please ensure that you have entered a detailed reason. If not please repeat with -u to update ban.");
         }

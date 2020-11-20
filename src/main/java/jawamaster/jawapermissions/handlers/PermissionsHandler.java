@@ -62,7 +62,7 @@ public class PermissionsHandler {
      */
     public static void reload() throws FileNotFoundException, IOException {
         //load the player immunity. This will also be used to check for valid ranks
-        loadImmunity();
+//        loadImmunity();
 
         //Get the locations for the permissions files
         final File permFiles = new File(JawaPermissions.getPlugin().getDataFolder() + "/permissions");
@@ -72,7 +72,7 @@ public class PermissionsHandler {
 
         //File list of permissions files
         File[] fileList = permFiles.listFiles();
-
+        if (fileList.length == 0) JawaPermissions.getPlugin().saveResource("permissions/world.yml", false);
         if (JawaPermissions.debug) {
             System.out.print(JawaPermissions.pluginSlug + handlerSlug + "Permissions are being checked in: " + permFiles);
         }
@@ -137,12 +137,6 @@ public class PermissionsHandler {
             }
 
         }
-        
-//        for (String rank : rankMap.keySet()){
-//            System.out.println(rankMap.get(rank).getRankName()+":");
-//            System.out.print(rankMap.get(rank).getImmunity()+":");
-//            System.out.print(rankMap.get(rank));
-//        }
     }
 
     /**
@@ -158,7 +152,7 @@ public class PermissionsHandler {
 
     }
 
-    public static void loadImmunity() throws IOException {
+//    public static void loadImmunity() throws IOException {
 //        final File immunityFile = new File(JawaPermissions.getPlugin().getDataFolder() + "/immunity.yml");
 //        Yaml yaml = new Yaml(); //Create Yaml object for permission retreival
 //
@@ -191,7 +185,7 @@ public class PermissionsHandler {
 //        } catch (FileNotFoundException ex) {
 //            Logger.getLogger(PermissionsHandler.class.getName()).log(Level.SEVERE, null, ex);
 //        }
-    }
+//    }
 
     /**
      * Will return true if player can perform operation on target.Will return
