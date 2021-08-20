@@ -13,6 +13,7 @@ import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
+import net.md_5.bungee.api.chat.hover.content.Text;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -60,7 +61,15 @@ public class WhoCommand implements CommandExecutor {
                 }
                 commandSender.sendMessage(names);
                 
-                commandSender.sendMessage(ChatColor.GREEN + " > Rank: " + target.getRankColor() + target.getRank() +ChatColor.GREEN + " Current IP: " + ChatColor.WHITE + target.getIP());
+                BaseComponent[] rankIP = new ComponentBuilder(" > Rank: ").color(ChatColor.GREEN)
+                        .append(target.getRank()).color(target.getRankColor())
+                        .append(" Current IP: ").color(ChatColor.GREEN)
+                        .append(target.getIP().replace("/", "")).color(ChatColor.WHITE)
+                            .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/playerinfo " + target.getName() + " location"))
+                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("GeoIP Location"))).create();
+                
+                commandSender.spigot().sendMessage(rankIP);
+//                commandSender.sendMessage(ChatColor.GREEN + " > Rank: " + target.getRankColor() + target.getRank() +ChatColor.GREEN + " Current IP: " + ChatColor.WHITE + target.getIP());
                 
                 //TODO build this to be a clickable request for ban data
                 String banInfo = ChatColor.GREEN + " > Banned: ";
@@ -75,16 +84,16 @@ public class WhoCommand implements CommandExecutor {
                             .append(player.getGameMode().toString().toLowerCase()).color(ChatColor.WHITE)
                             .append("[s]").color(ChatColor.GREEN)
                                 .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/gamemode survival " + target.getName()))
-                                .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Change to Survival").create()))
+                                .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Change to Survival")))
                             .append("[a]").color(ChatColor.GREEN)
                                 .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/gamemode adventure " + target.getName()))
-                                .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Change to adventure").create()))
+                                .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Change to adventure")))
                             .append("[c]").color(ChatColor.GREEN)
                                 .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/gamemode creative " + target.getName()))
-                                .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Change to creative").create()))
+                                .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Change to creative")))
                             .append("[sp]").color(ChatColor.GREEN)
                                 .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/gamemode spectator " + target.getName()))
-                                .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Change to spectator").create()))
+                                .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Change to spectator")))
                             .append(" Location: ")
                             .color(net.md_5.bungee.api.ChatColor.GREEN)
                             .append(player.getWorld().getName())
@@ -92,7 +101,7 @@ public class WhoCommand implements CommandExecutor {
                             .append(" " + player.getLocation().getBlockX() + "," + player.getLocation().getBlockY() + "," + player.getLocation().getBlockZ())
                                 .color(net.md_5.bungee.api.ChatColor.GOLD)
                                 .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/tp " + target.getName()))
-                                .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Teleport to player").create()))
+                                .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Teleport to player")))
                             .create();
                     commandSender.spigot().sendMessage(locationInfo);
                 }
@@ -102,15 +111,15 @@ public class WhoCommand implements CommandExecutor {
                         .append(" [Set Nick]")
                             .color(net.md_5.bungee.api.ChatColor.BLUE)
                             .event(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/setnick " + target.getName() + " "))
-                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Set Nick").create()))
+                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Set Nick")))
                         .append(" [Set Tag]")
                             .color(net.md_5.bungee.api.ChatColor.AQUA)
                             .event(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/settag " + target.getName() + " "))
-                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Set Tag").create()))
+                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Set Tag")))
                         .append(" [Set Star]")
                             .color(net.md_5.bungee.api.ChatColor.YELLOW)
                             .event(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/setstar " + target.getName() + " "))
-                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Set Star").create()))
+                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Set Star")))
                         .create();
                 commandSender.spigot().sendMessage(nameOptions);
                 
@@ -119,27 +128,31 @@ public class WhoCommand implements CommandExecutor {
                         .append(" [Rank]")
                             .color(net.md_5.bungee.api.ChatColor.LIGHT_PURPLE)
                             .event(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/setrank -p " + target.getName() + " -r "))
-                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Set rank").create()))
+                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Set rank")))
                         .append(" [OInv]")
                             .color(net.md_5.bungee.api.ChatColor.GOLD)
                             .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/openinv " + target.getName() + " -r "))
-                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("OpenInv").create()))
+                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("OpenInv")))
                         .append(" [Alts]")
                             .color(net.md_5.bungee.api.ChatColor.DARK_GREEN)
                             .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/playerinfo " + target.getName() + " alts"))
-                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Alt Search").create()))
+                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Alt Search")))
                         .append(" [Ban]")
                             .color(net.md_5.bungee.api.ChatColor.RED)
-                            .event(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/ban -p " + target.getName() + " -r "))
-                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Ban Player").create()))
+                            .event(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/ban " + target.getName() + " "))
+                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Ban Player")))
                         .append(" [Mute]")
                             .color(net.md_5.bungee.api.ChatColor.DARK_GRAY)
                             .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mute " + target.getName() ))
-                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Mute").create()))
+                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Mute")))
                         .append(" [Freeze]")
                             .color(net.md_5.bungee.api.ChatColor.AQUA)
                             .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/freeze " + target.getName() ))
-                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Freeze").create()))
+                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Freeze")))
+                        .append(" [Comment]")
+                            .color(net.md_5.bungee.api.ChatColor.YELLOW)
+                            .event(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/playercomment " + target.getName() + " add "))
+                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Add a Comment")))
                         .create();
                 commandSender.spigot().sendMessage(adminOptions);
                 
@@ -148,15 +161,19 @@ public class WhoCommand implements CommandExecutor {
                         .append(" [IP Info]")
                             .color(net.md_5.bungee.api.ChatColor.DARK_PURPLE)
                             .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/playerinfo " + target.getName() + " ips"))
-                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("IP Info").create()))
+                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("IP Info")))
                         .append(" [Ranking Info]")
                             .color(net.md_5.bungee.api.ChatColor.DARK_AQUA)
                             .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/playerinfo " + target.getName() + " ranks"))
-                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Nick Info").create()))
+                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Nick Info")))
                         .append(" [Ban Info]")
-                            .color(net.md_5.bungee.api.ChatColor.DARK_AQUA)
+                            .color(net.md_5.bungee.api.ChatColor.GREEN)
                             .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/baninfo list " + target.getName()))
-                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Ban Info").create()))
+                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Ban Info")))
+                        .append(" [List Comments]")
+                            .color(net.md_5.bungee.api.ChatColor.BLUE)
+                            .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/playercomment " + target.getName() + " list" ))
+                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("List player comments")))
                         .create();
                 commandSender.spigot().sendMessage(infoOptions);
 

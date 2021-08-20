@@ -16,6 +16,8 @@
  */
 package jawamaster.jawapermissions.handlers;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 import net.jawasystems.jawacore.PlayerManager;
 import net.jawasystems.jawacore.dataobjects.PlayerDataObject;
@@ -25,6 +27,7 @@ import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
+import net.md_5.bungee.api.chat.hover.content.Text;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.json.JSONArray;
@@ -42,12 +45,12 @@ public class BanHandler {
      * @param pdObject 
      */
     public static void getBanInfo(CommandSender commandSender, String ban, PlayerDataObject pdObject){
-        JSONObject banData = pdObject.getBanData().getJSONObject(ban);
+        JSONObject banData = pdObject.getBanEntry(ban);
         JSONArray message = new JSONArray();
         message.put(ChatColor.GREEN + " > Ban information for " + pdObject.getFriendlyName() + ChatColor.GREEN + " on ban: " + ChatColor.BLUE + ban);
         
         BaseComponent[] reason = new ComponentBuilder("  > Reason: ").color(ChatColor.GREEN)
-                        .append(banData.getString("reason"))
+                        .append(banData.optString("reason", "WARNING: MISSING DATA"))
                             .color(ChatColor.WHITE)
                         .create();
         message.put(reason);
@@ -64,35 +67,60 @@ public class BanHandler {
         message.put(active.create());
        
         //Banned by
-        PlayerDataObject bannedBy = PlayerManager.getPlayerDataObject(UUID.fromString(banData.getString("banned-by")));
+        String adminUUID = banData.getString("banned-by");
+        String adminFriendlyName;
+        if ("00000000-0000-0000-0000-000000000000".equalsIgnoreCase(adminUUID)){
+            adminFriendlyName = "JawaCore System";
+        } else {
+            PlayerDataObject admin = PlayerManager.getPlayerDataObject(UUID.fromString(adminUUID));
+            if (admin != null) {
+                adminFriendlyName = admin.getFriendlyName();
+            } else {
+                adminFriendlyName = "WARNING: MISSING PLAYER ENTRY for " + adminUUID;
+            }
+        }
+        
         ComponentBuilder by = new ComponentBuilder("  > Banned-by: ").color(ChatColor.GREEN)
-                .append(bannedBy.getFriendlyName());
+                .append(adminFriendlyName);
+        
         
         if (banData.keySet().contains("unbanned-by")) {
-            String unbannedby;
-            if (!banData.getString("banned-by").equals(banData.getString("unbanned-by"))) {
-                unbannedby = PlayerManager.getPlayerDataObject(UUID.fromString(banData.getString("banned-by"))).getFriendlyName();
+            String unadminUUID = banData.getString("unbanned-by");
+            String unadminFriendlyName;
+            if ("00000000-0000-0000-0000-000000000000".equalsIgnoreCase(unadminUUID)){
+                unadminFriendlyName = "JawaCore System";
             } else {
-                unbannedby = bannedBy.getFriendlyName();
+                PlayerDataObject unadmin = PlayerManager.getPlayerDataObject(UUID.fromString(unadminUUID));
+                if (unadmin != null) {
+                    unadminFriendlyName = unadmin.getFriendlyName();
+                } else {
+                    unadminFriendlyName = "WARNING: MISSING PLAYER ENTRY for " + unadminUUID;
+                }
             }
+//            String unbannedby;
+//            if (!banData.getString("banned-by").equals(banData.getString("unbanned-by"))) {
+//                unbannedby = PlayerManager.getPlayerDataObject(UUID.fromString(banData.getString("banned-by"))).getFriendlyName();
+//            } else {
+//                unbannedby = bannedBy.getFriendlyName();
+//            }
             by.append(" Unbanned-by: ").color(ChatColor.GREEN)
-                    .append(unbannedby);
+                    .append(unadminFriendlyName);
         }
         message.put(by.create());
         
         //Banned on
         ComponentBuilder bannedOn = new ComponentBuilder("  > Banned On: ").color(ChatColor.GREEN);
-        bannedOn.append(TimeParser.getHumanReadableDateTime(ban))
+        bannedOn.append(TimeParser.getHumanReadableDateTime(ban,1))
                     .color(ChatColor.BLUE);
         message.put(bannedOn.create());
         
         //Banned until
         ComponentBuilder bannedUntil = new ComponentBuilder("  > Banned Until: ").color(ChatColor.GREEN);
-        if (banData.getString("banned-until").equalsIgnoreCase("forever")){
+        if (LocalDateTime.parse(banData.getString("banned-until"), DateTimeFormatter.ISO_LOCAL_DATE_TIME).isAfter(LocalDateTime.now().plusYears(10L))){
             bannedUntil.append("forever")
                     .color(ChatColor.RED);
         } else {
-            bannedUntil.append(TimeParser.getHumanReadableDateTime(banData.getString("banned-until")))
+            bannedUntil.append(TimeParser.getHumanReadableDateTime(banData.getString("banned-until"),1))
                     .color(ChatColor.BLUE);
         }
         message.put(bannedUntil.create());
@@ -112,7 +140,7 @@ public class BanHandler {
         //Unban Date
         if (banData.keySet().contains("unbanned-on")) {
             ComponentBuilder unban = new ComponentBuilder("  > Unbanned on: ").color(ChatColor.GREEN)
-                    .append(TimeParser.getHumanReadableDateTime(banData.getString("unbanned-on")))
+                    .append(TimeParser.getHumanReadableDateTime(banData.getString("unbanned-on"),1))
                     .color(ChatColor.BLUE);
             message.put(unban.create());
         }
@@ -120,7 +148,8 @@ public class BanHandler {
         ComponentBuilder options = new ComponentBuilder("  > Options: ").color(ChatColor.GREEN);
         options.append("[Update Ban Reason] ")
                 .color(ChatColor.BLUE)
-                .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Update Ban Reason").create()))
+                .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Update Ban Reason")))
+                //.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Update Ban Reason").create()))
                 .event(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "Not Yet Implimented"));
                 
 
@@ -136,32 +165,33 @@ public class BanHandler {
     public static void listBans(CommandSender commandSender, String player, PlayerDataObject pdObject){
                 
                 JSONArray message = new JSONArray();
-                JSONObject bans = pdObject.getBanData();
+                JSONArray bans = pdObject.getBanData();
+                String latestBanDate = pdObject.getLatestBanDate();
                 //String[] message = new String[1 + bans.length()];
                 message.put(ChatColor.GREEN + "> Ban information for " + pdObject.getFriendlyName());
                 
                 BaseComponent[] latestBanData = new ComponentBuilder(" > ").color(ChatColor.GREEN)
-                        .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/baninfo info " + player + " " + pdObject.getLatestBanDate()))
-                        .append(pdObject.getLatestBanDate())
+                        .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/baninfo info " + player + " " + latestBanDate))
+                        .append(latestBanDate)
                             .color(ChatColor.RED)
-                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Latest Ban").create()))
+                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Latest Ban")))
                         .append(": ")
                             .color(ChatColor.GREEN)
-                        .append(pdObject.getLatestBan().getString("reason")).color(ChatColor.WHITE)
+                        .append(pdObject.getLatestBanEntry().getString("reason")).color(ChatColor.WHITE)
                             
                         .create();
                 message.put(latestBanData);
                 
                 
-                for (String ban : bans.keySet()){
-                    if (!ban.equals(pdObject.getLatestBanDate())) {
+                for (Object ban : bans){
+                    if (!((JSONObject) ban).getString("date").equals(latestBanDate)) {
                         ComponentBuilder banData = new ComponentBuilder(" > ")
                                 .color(ChatColor.GREEN)
-                        .append(ban)
+                        .append(((JSONObject) ban).getString("date"))
                                 .color(ChatColor.YELLOW)
                         .append(": ")
                             .color(ChatColor.GREEN)
-                        .append(pdObject.getBanReason(ban)).color(ChatColor.WHITE)
+                        .append(((JSONObject) ban).getString("reason")).color(ChatColor.WHITE)
                                 .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/baninfo info " + player + " " + ban));
                         BaseComponent[] bc = banData.create();
                         message.put(bc);

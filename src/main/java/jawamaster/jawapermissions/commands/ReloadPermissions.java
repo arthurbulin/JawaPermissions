@@ -5,30 +5,28 @@
  */
 package jawamaster.jawapermissions.commands;
 
-import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jawamaster.jawapermissions.handlers.PermissionsHandler;
+import net.md_5.bungee.api.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 
-/**
- *
+/** This command tells the PermissionsHandler to reload the permissions files and
+ * rebuild the rank objects.
  * @author Arthur Bulin
  */
-public class reloadPermissions implements CommandExecutor {
+public class ReloadPermissions implements CommandExecutor {
 
+    private static final Logger LOGGER = Logger.getLogger("ReloadPermissions");
+    
     @Override
     public boolean onCommand(CommandSender commandSender, Command arg1, String arg2, String[] arg3) {
-        try {
-            PermissionsHandler.reload();
-            if (commandSender instanceof Player) ((Player) commandSender).sendMessage("Permissions reload called.");
-            else System.out.println("Permissions reload called.");
-        } catch (IOException ex) {
-            Logger.getLogger(reloadPermissions.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        
+        PermissionsHandler.reload();
+        commandSender.sendMessage(ChatColor.GREEN + "> Permissions reload called");
+        LOGGER.log(Level.INFO, "Permissions reload called");
         
         return true;
     }

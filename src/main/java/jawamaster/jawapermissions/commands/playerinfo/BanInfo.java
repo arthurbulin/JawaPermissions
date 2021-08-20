@@ -52,13 +52,13 @@ public class BanInfo implements CommandExecutor{
                     commandSender.sendMessage(ChatColor.RED + " > Error: That player doesn't seem to contain any ban data. This means they have never been banned.");
                     return true;
                 }
-                
-                Bukkit.getServer().getScheduler().runTaskAsynchronously(JawaCore.plugin, new Runnable() {
-                    @Override
-                    public void run() {
-                        BanHandler.listBans(commandSender, args[1], pdObject);
-                    }
-                });
+                BanHandler.listBans(commandSender, args[1], pdObject);
+//                Bukkit.getServer().getScheduler().runTaskAsynchronously(JawaCore.plugin, new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        
+//                    }
+//                });
                 
             } else {
                 commandSender.sendMessage(ChatColor.RED + " > Error: " + args[0] + " is not understood");
@@ -78,7 +78,7 @@ public class BanInfo implements CommandExecutor{
                     return true;
                 }
                 
-                if (!pdObject.getBanData().keySet().contains(args[2])) {
+                if (!pdObject.getListOfBans().contains(args[2])) {
                     commandSender.sendMessage(ChatColor.RED + " > Error: " + args[2] + " does not appear to be a valid ban date.");
                     return true;
                 }

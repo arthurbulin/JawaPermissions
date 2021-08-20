@@ -41,6 +41,10 @@ commands:
     description: "Provides information about a rank"
     usage: "/rankinfo [description|requirements] <rank>"
     permission: jawapermissions.rankinfo
+  playercomment:
+    description: "Allows the viewing, addition, and removal of comments from a player's data"
+    usage: "/playercomment <player> [add|remove|list] [<comment>|<comment#>|<page #>]"
+    permission: jawapermissions.playercomment
     
 permissions:
   jawapermissions.alt:
@@ -73,3 +77,12 @@ permissions:
   jawapermissions.rankinfo:
     description: "Allows a player to see the description or requirements for a rank"
     deafult: true
+  jawapermissions.playercomment:
+    description: "Allows an administrative user to see admin comments on a user"
+    default: false
+  jawapermissions.playercomment.add:
+    description: "Allows an administrative user to add admin comments on a user"
+    default: false
+  jawapermissions.playercomment.remove:
+    description: "Allows an administrative user to remove admin comments on a user"
+    default: false

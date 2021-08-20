@@ -19,6 +19,7 @@ package jawamaster.jawapermissions.listeners;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 
 /**
  *
@@ -27,8 +28,9 @@ import org.bukkit.event.player.PlayerJoinEvent;
 public class TestListener implements Listener{
     
     @EventHandler
-    public static void onPlayerJoin(PlayerJoinEvent event) {
-        event.getPlayer().getClass().getSuperclass();
+    public static void onPlayerJoin(PlayerMoveEvent e) {
+        //super(true);
+        
     }
     
 }

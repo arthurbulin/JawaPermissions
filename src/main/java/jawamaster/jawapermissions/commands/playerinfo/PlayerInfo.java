@@ -22,19 +22,16 @@ import jawamaster.jawapermissions.handlers.PermissionsHandler;
 import jawamaster.jawapermissions.handlers.PlayerInfoHandler;
 import net.jawasystems.jawacore.PlayerManager;
 import net.jawasystems.jawacore.dataobjects.PlayerDataObject;
-import net.jawasystems.jawacore.handlers.ESHandler;
 import net.jawasystems.jawacore.utils.TimeParser;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
-import net.md_5.bungee.api.chat.HoverEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.scheduler.BukkitTask;
-import org.elasticsearch.search.SearchHit;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -46,7 +43,7 @@ public class PlayerInfo implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        String usage = "/playerinfo <player> <bans|alts|ranks>";
+        String usage = "/playerinfo <player> <alts|ips|ranks>";
 
         PlayerDataObject target = PlayerManager.getPlayerDataObject(args[0]);
         if (target == null) {
@@ -64,7 +61,11 @@ public class PlayerInfo implements CommandExecutor {
                 case "ranks":
                     getRankHistory(sender, target);
                     break;
+                case "location":
+                    getIPGeoLocation(sender, target);
+                    break;
                 default:
+                    sender.sendMessage(ChatColor.GREEN + "> Usage: " + usage);
                     break;
             }
 
@@ -73,7 +74,17 @@ public class PlayerInfo implements CommandExecutor {
 
     }
 
-
+    /** Gets the geoIP location and returns the message to the admin
+     * @param sender
+     * @param target 
+     */
+    private void getIPGeoLocation(CommandSender sender, PlayerDataObject target){
+        String ip = target.getIP().replace("/", "");
+        String location = PlayerInfoHandler.getIPGeoLocation(ip);
+        
+        sender.sendMessage(ChatColor.GREEN + "> Approximate GeoLocation for " + ChatColor.BLUE + target.getName());
+        sender.sendMessage(ChatColor.GREEN + " > " + ChatColor.GOLD + location);
+    }
 
     private void getIPHistory(CommandSender sender, PlayerDataObject target) {
         JSONArray ips = target.getIPArray();
@@ -83,15 +94,16 @@ public class PlayerInfo implements CommandExecutor {
 
         for (Object item : ips) {
             BaseComponent[] line = new ComponentBuilder(" > ").color(ChatColor.GREEN)
-                    .append(String.valueOf(item))
-                    .color(ChatColor.YELLOW)
+                    .append(String.valueOf(item).replace("/", "")) .color(ChatColor.YELLOW)
+                    .append(" --> ").color(ChatColor.BLUE)
+                    .append(PlayerInfoHandler.getIPGeoLocation(String.valueOf(item).replace("/", ""))).color(ChatColor.GOLD)
                     .create();
             sender.spigot().sendMessage(line);
         }
     }
 
     private void getRankHistory(CommandSender sender, PlayerDataObject target) {
-        JSONObject rankData = target.getRankData();
+        JSONArray rankData = target.getRankData();
         if (rankData == null || rankData.isEmpty()) {
             //Report no rank change data
             sender.sendMessage(ChatColor.GREEN + "> No rank history data was found.");
@@ -105,25 +117,26 @@ public class PlayerInfo implements CommandExecutor {
                 msg.put(header);
 
                 //header //FIXME there seems to be errors generating on lines 153 and 159 due to the lambda expression.
-                for(String date : rankData.keySet()){
+                for(Object banObj : rankData){
+                    JSONObject ban = (JSONObject) banObj;
                     ComponentBuilder entry = new ComponentBuilder(" > ").color(ChatColor.GREEN)
-                            .append(rankData.getJSONObject(date).getString("from-rank"))
-                            .color(PermissionsHandler.getRankColor(rankData.getJSONObject(date).getString("from-rank")))
+                            .append(ban.getString("from-rank"))
+                            .color(PermissionsHandler.getRankColor(ban.getString("from-rank")))
                             .append(" -> ")
                             .color(ChatColor.GREEN)
-                            .append(rankData.getJSONObject(date).getString("to-rank"))
-                            .color(PermissionsHandler.getRankColor(rankData.getJSONObject(date).getString("to-rank")))
+                            .append(ban.getString("to-rank"))
+                            .color(PermissionsHandler.getRankColor(ban.getString("to-rank")))
                             .append(" by ")
                             .color(ChatColor.GREEN);
-                    if (rankData.getJSONObject(date).getString("changed-by").equals("00000000-0000-0000-0000-000000000000")) {
+                    if (ban.getString("changed-by").equals("00000000-0000-0000-0000-000000000000")) {
                         entry.append("Autoelevation")
                                 .color(ChatColor.BLUE);
                     } else {
-                        PlayerDataObject admin = PlayerManager.getPlayerDataObject(UUID.fromString(rankData.getJSONObject(date).getString("changed-by")));
+                        PlayerDataObject admin = PlayerManager.getPlayerDataObject(UUID.fromString(ban.getString("changed-by")));
                         entry.append(admin.getFriendlyName());
                     }
                     entry.append(" on ").color(ChatColor.GREEN)
-                            .append(TimeParser.getHumanReadableDateTime(date, 1))
+                            .append(TimeParser.getHumanReadableDateTime(ban.getString("date"), 1))
                             .color(ChatColor.BLUE);
                     
                     msg.put(entry.create());
