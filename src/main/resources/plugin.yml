@@ -3,7 +3,7 @@ main: jawamaster.jawapermissions.JawaPermissions
 version: ${pom.version}
 description: "A permissions and player manegment plugin using the ElasticSearch Database."
 author: Jawamaster (Arthur Bulin)
-api-version: 1.17
+api-version: 1.18
 commands:
   uuid:
     description: This command returns the UUID of a user.

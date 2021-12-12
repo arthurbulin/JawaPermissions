@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>jawamaster</groupId>
     <artifactId>JawaPermissions</artifactId>
-    <version>1.17.X-1.0</version>
+    <version>1.18.X-1.0</version>
     <packaging>jar</packaging>
     
     <build>
@@ -40,7 +40,7 @@
         <dependency>
         <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
-            <version>1.17.1-R0.1-SNAPSHOT</version>
+            <version>1.18.1-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -51,7 +51,7 @@
         <dependency>
             <groupId>net.jawasystems</groupId>
             <artifactId>JawaCore</artifactId>
-            <version>1.17.X-1.0</version>
+            <version>1.18.X-1.0</version>
         </dependency>
         <dependency>
             <groupId>com.maxmind.geoip2</groupId>
