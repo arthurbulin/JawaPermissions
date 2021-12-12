@@ -17,12 +17,16 @@
 package jawamaster.jawapermissions.worldzone;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jawamaster.jawapermissions.JawaPermissions;
 import net.jawasystems.jawacore.handlers.JSONHandler;
 import net.jawasystems.jawacore.handlers.LocationDataHandler;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.json.JSONObject;
@@ -34,7 +38,10 @@ import org.json.JSONObject;
 public class ZoneHandler {
 
     private static final Logger LOGGER = Logger.getLogger("JawaPermission][WorldBorder");
-    private static final HashMap<String,JSONObject> WBS = new HashMap();
+    private static final HashMap<String,WorldZone> WORLDZONES = new HashMap();
+    private static final HashMap<UUID,HashMap> ALLOWEDIN = new HashMap();
+    private static final HashMap<UUID,HashMap> REQUIREDIN = new HashMap();
+    
     
     /** Load World Boarders from file.
      * 
@@ -44,9 +51,9 @@ public class ZoneHandler {
         JSONObject worldborders = JSONHandler.LoadJSONConfig(JawaPermissions.getPlugin(), "/worldborders.json");
         if (!worldborders.isEmpty()) {
             for (String key : worldborders.keySet()) {
-                WBS.put(key, worldborders.getJSONObject(key));
+                //WORLDZONES.put(key, worldborders.getJSONObject(key));
             }
-            LOGGER.log(Level.INFO, "{0} World Borders have been loaded.", WBS.size());
+            LOGGER.log(Level.INFO, "{0} World Borders have been loaded.", WORLDZONES.size());
         } else {
             LOGGER.log(Level.INFO, "No World Borders were found to load");
         }
@@ -56,12 +63,14 @@ public class ZoneHandler {
      */
     public static void saveWorldBorders() {
         JSONObject wbs = new JSONObject();
-        for (String kitname : WBS.keySet()){
-            wbs.put(kitname, WBS.get(kitname));
+        for (String kitname : WORLDZONES.keySet()){
+            wbs.put(kitname, WORLDZONES.get(kitname));
         }
         JSONHandler.WriteJSONToFile(JawaPermissions.getPlugin(), "/worldborders.json", wbs);
-        Logger.getLogger(JSONHandler.class.getName()).log(Level.INFO, "{0} World Borders saved to file", WBS.size());
+        Logger.getLogger(JSONHandler.class.getName()).log(Level.INFO, "{0} World Borders saved to file", WORLDZONES.size());
     }
+    
+    
     
     public static void createWorldBorder(String wbName, Location location, String shape, int x, int z) {
         JSONObject wb = new JSONObject();
@@ -69,7 +78,9 @@ public class ZoneHandler {
         wb.put("LOCATION", LocationDataHandler.packLocation(location));
         
         JSONObject dimensions = new JSONObject();
+            //X radi
             dimensions.put("XSIZE", x);
+            //Z radi
             dimensions.put("ZSIZE", z);
             dimensions.put("SHAPE", shape);
         wb.put("DIMENSIONS", dimensions);
@@ -94,12 +105,41 @@ public class ZoneHandler {
             configuration.put("EXITDENY", "&cYou may not exit the " + wbName + " border zone");
         wb.put("CONFIGURATION", configuration);
         
-        WBS.put(wbName, wb);
+//        WORLDZONES.put(wbName, wb);
         saveWorldBorders();
     }
     
-//    public static void checkPlayers(List<Player> players){
-//        players.get(0).
-//    }
+    public static void generateZoneMap(){
+        
+    }
+    
+    public static void checkPlayers(List<Player> players){
+        //for each player
+        players.forEach((player) -> {
+            Set<String> superZones = new HashSet();
+            //check if a player is in the super zone
+            
+                //check if a player falls in the zone
+        });
+            
+    }
+    
+    public static void setPermissionsForPlayer(Player player){
+        HashMap<String,Boolean> allowedIn = new HashMap();
+        HashMap<String,Boolean> requiredIn = new HashMap();
+        for(String zone : WORLDZONES.keySet()){
+            allowedIn.put(zone, WORLDZONES.get(zone).isPlayerAllowedInZone(player));
+            requiredIn.put(zone, WORLDZONES.get(zone).isPlayerRequiredInZone(player));
+        }
+        ALLOWEDIN.put(player.getUniqueId(), allowedIn);
+        REQUIREDIN.put(player.getUniqueId(), requiredIn);
+    }
+    
+    private static void setWorldZoneScan(WorldZone zone, Player player){
+        //zone name, allowed in zone, required in zone, xradius, zradius, xcenter, zcenter
+        Bukkit.getScheduler().runTaskLaterAsynchronously(JawaPermissions.getPlugin(), () -> {
+            
+        }, 5);
+    }
 
 }

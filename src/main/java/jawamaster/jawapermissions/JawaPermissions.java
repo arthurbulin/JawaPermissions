@@ -5,8 +5,7 @@
 */
 package jawamaster.jawapermissions;
 
-import com.maxmind.geoip2.DatabaseReader;
-import java.io.File;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import jawamaster.jawapermissions.commands.RankInfo;
 import jawamaster.jawapermissions.commands.BanPlayer;
@@ -68,7 +67,11 @@ public class JawaPermissions extends JavaPlugin {
         AutoElevateHandler.getAutoElevateList();
         
         //Load GeoIP Database
-        geoIPCheck = PlayerInfoHandler.getIPDatabase(geoIPDB);
+        if (geoIPCheck) {
+            geoIPCheck = PlayerInfoHandler.getIPDatabase(geoIPDB);
+        } else {
+            LOGGER.log(Level.INFO, "GeoIP commands are disabled");
+        }
         
         //Register Event Listeners
         getServer().getPluginManager().registerEvents(new PlayerJoin(), this);
@@ -122,6 +125,7 @@ public class JawaPermissions extends JavaPlugin {
             LOGGER.info("Debug is turned off");
         }
         
+        geoIPCheck = config.getBoolean("geoip-enabled", false);
         geoIPDB = config.getString("geoip-database", "GeoLite2-City.mmdb");
         
     }
@@ -141,6 +145,10 @@ public class JawaPermissions extends JavaPlugin {
     
     public static boolean checkForAlts(){
         return altCheck;
+    }
+    
+    public static boolean isGeoIPEnabled(){
+        return geoIPCheck;
     }
     
 

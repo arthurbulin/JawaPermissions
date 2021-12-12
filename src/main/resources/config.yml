@@ -8,6 +8,7 @@ unsecured: true
 ban-appeal-suffix: "You can appeal at https://foxelbox.com"
 ban-reason-length: 3
 unban-reason-length: 3
+geoip-enabled: false
 geoip-database: GeoLite2-City.mmdb
 alt-notification:
     enabled: false

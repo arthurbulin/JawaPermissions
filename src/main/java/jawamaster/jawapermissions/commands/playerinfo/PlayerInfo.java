@@ -79,14 +79,19 @@ public class PlayerInfo implements CommandExecutor {
      * @param target 
      */
     private void getIPGeoLocation(CommandSender sender, PlayerDataObject target){
-        String ip = target.getIP().replace("/", "");
-        String location = PlayerInfoHandler.getIPGeoLocation(ip);
-        
-        sender.sendMessage(ChatColor.GREEN + "> Approximate GeoLocation for " + ChatColor.BLUE + target.getName());
-        sender.sendMessage(ChatColor.GREEN + " > " + ChatColor.GOLD + location);
+        if (JawaPermissions.isGeoIPEnabled()){
+            String ip = target.getIP().replace("/", "");
+            String location = PlayerInfoHandler.getIPGeoLocation(ip);
+
+            sender.sendMessage(ChatColor.GREEN + "> Approximate GeoLocation for " + ChatColor.BLUE + target.getName());
+            sender.sendMessage(ChatColor.GREEN + " > " + ChatColor.GOLD + location);
+        } else {
+            sender.sendMessage(ChatColor.RED + "> Error: IP Geo Location is disabled");
+        }
     }
 
     private void getIPHistory(CommandSender sender, PlayerDataObject target) {
+        
         JSONArray ips = target.getIPArray();
         //String ip = target.getIP();
         BaseComponent[] header = new ComponentBuilder(ChatColor.GREEN + "> IP history for: " + ChatColor.BLUE + target.getName()).create();
@@ -100,6 +105,7 @@ public class PlayerInfo implements CommandExecutor {
                     .create();
             sender.spigot().sendMessage(line);
         }
+        
     }
 
     private void getRankHistory(CommandSender sender, PlayerDataObject target) {
