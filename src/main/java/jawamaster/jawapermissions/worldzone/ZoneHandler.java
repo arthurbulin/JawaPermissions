@@ -28,6 +28,7 @@ import net.jawasystems.jawacore.handlers.JSONHandler;
 import net.jawasystems.jawacore.handlers.LocationDataHandler;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.json.JSONObject;
 
@@ -39,9 +40,14 @@ public class ZoneHandler {
 
     private static final Logger LOGGER = Logger.getLogger("JawaPermission][WorldBorder");
     private static final HashMap<String,WorldZone> WORLDZONES = new HashMap();
+    
     private static final HashMap<UUID,HashMap> ALLOWEDIN = new HashMap();
     private static final HashMap<UUID,HashMap> REQUIREDIN = new HashMap();
     
+    
+    public static HashMap<String,WorldZone> getWorldZones(){
+        return WORLDZONES;
+    }
     
     /** Load World Boarders from file.
      * 

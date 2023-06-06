@@ -1,6 +1,4 @@
 servername: main
-eshost: localhost
-esport: 9200
 default-world: world
 debug: false
 new-player-message: "You have been successfully Indexed"
@@ -13,3 +11,5 @@ geoip-database: GeoLite2-City.mmdb
 alt-notification:
     enabled: false
     minimum-immunity: 1
+index-customization:
+    bans: bans

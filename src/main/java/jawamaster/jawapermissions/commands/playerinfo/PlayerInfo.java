@@ -92,20 +92,31 @@ public class PlayerInfo implements CommandExecutor {
 
     private void getIPHistory(CommandSender sender, PlayerDataObject target) {
         
-        JSONArray ips = target.getIPArray();
+        JSONArray ips = target.getIPData();
         //String ip = target.getIP();
         BaseComponent[] header = new ComponentBuilder(ChatColor.GREEN + "> IP history for: " + ChatColor.BLUE + target.getName()).create();
         sender.spigot().sendMessage(header);
-
-        for (Object item : ips) {
-            BaseComponent[] line = new ComponentBuilder(" > ").color(ChatColor.GREEN)
-                    .append(String.valueOf(item).replace("/", "")) .color(ChatColor.YELLOW)
-                    .append(" --> ").color(ChatColor.BLUE)
-                    .append(PlayerInfoHandler.getIPGeoLocation(String.valueOf(item).replace("/", ""))).color(ChatColor.GOLD)
-                    .create();
-            sender.spigot().sendMessage(line);
+        if (!JawaPermissions.isGeoIPEnabled()) {
+            for (Object item : ips) {
+                BaseComponent[] line = new ComponentBuilder(" > ").color(ChatColor.GREEN)
+                        .append(((JSONObject) item).getString("ip")).color(ChatColor.YELLOW)
+                        .append(":").color(ChatColor.WHITE)
+                        .append(TimeParser.getHumanReadableDateTime(((JSONObject) item).getString("date"), 1)).color(ChatColor.YELLOW)
+                        .create();
+                sender.spigot().sendMessage(line);
+            }
+        } else {
+            for (Object item : ips) {
+                BaseComponent[] line = new ComponentBuilder(" > ").color(ChatColor.GREEN)
+                        .append(((JSONObject) item).getString("ip")).color(ChatColor.YELLOW)
+                        .append(":").color(ChatColor.WHITE)
+                        .append(TimeParser.getHumanReadableDateTime(((JSONObject) item).getString("date"), 1)).color(ChatColor.YELLOW)
+                        .append(" --> ").color(ChatColor.BLUE)
+                        .append(PlayerInfoHandler.getIPGeoLocation(((JSONObject) item).getString("ip"))).color(ChatColor.GOLD)
+                        .create();
+                sender.spigot().sendMessage(line);
+            }
         }
-        
     }
 
     private void getRankHistory(CommandSender sender, PlayerDataObject target) {

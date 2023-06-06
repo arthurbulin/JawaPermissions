@@ -17,7 +17,6 @@
 package jawamaster.jawapermissions.worldzone;
 
 import net.jawasystems.jawacore.PlayerManager;
-import net.jawasystems.jawacore.dataobjects.PlayerDataObject;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -45,12 +44,24 @@ public class WorldZone {
     private String shape;
     /** The x-radius from the center. **/
     private int xradius;
+    /** The x-radius squared. **/
+    private int xradiusSqr;
     /** The z-radius from the center. **/
     private int zradius;
+    /** The z-radius squared. **/
+    private int zradiusSqr;
     /** The x-coord of the center. **/
     private int xcenter;
     /** The z-coord of the center. **/
     private int zcenter;
+    private int betweenXUpper;
+    private int betweenXLower;
+    private int betweenZUpper;
+    private int betweenZLower;
+    /** The priority that this zone takes over others. This should be 1-100. Where the 
+     * lower the number the higher the priority. i.e. 1 overrides 2, 2 overrides 3, etc.
+     */
+    private int priority;
     /** The world the zone exists in. **/
     private final World WORLD;
     
@@ -93,16 +104,25 @@ public class WorldZone {
      * @param type The test criteria of the zone
      * @param method Whether the zone bonks or teleports the user
      * @param creater The user who created the 
+     * @param priority The priority this zone takes over all others
      */
-    public WorldZone(String zoneName, String shape, int xradius, int zradius, Location center, boolean inclusive, String type, String method, String creater){
+    public WorldZone(String zoneName, String shape, int xradius, int zradius, Location center, boolean inclusive, String type, String method, String creater, int priority){
         this.NAME = zoneName;
         this.CREATOR = creater;
         
+        this.priority = priority;
+        
         this.shape = shape;
         this.xradius = xradius;
+        this.xradiusSqr = xradius * xradius;
         this.zradius = zradius;
+        this.zradiusSqr = zradius * zradius;
         this.xcenter = center.getBlockX();
         this.zcenter = center.getBlockZ();
+        this.betweenXUpper = this.xcenter + this.xradius;
+        this.betweenXLower = this.xcenter - this.xradius;
+        this.betweenZUpper = this.zcenter + this.zradius;
+        this.betweenZLower = this.zcenter - this.zradius;
         this.WORLD = center.getWorld();
         
 //        this.inclusive = inclusive;
@@ -156,12 +176,20 @@ public class WorldZone {
         this.NAME = worldZoneObj.getString("name");
         this.CREATOR = worldZoneObj.getString("creator");
         
+        this.priority = worldZoneObj.getInt("priority");
+        
         //Shape data
         this.shape = worldZoneObj.getJSONObject("shape-data").getString("shape");
         this.xradius = worldZoneObj.getJSONObject("shape-data").getInt("xradius");
+        this.xradiusSqr = this.xradius * this.xradius;
         this.zradius = worldZoneObj.getJSONObject("shape-data").getInt("zradius");
+        this.zradiusSqr = this.zradius * this.zradius;
         this.xcenter = worldZoneObj.getJSONObject("shape-data").getInt("xcenter");
         this.zcenter = worldZoneObj.getJSONObject("shape-data").getInt("zcenter");
+        this.betweenXUpper = this.xcenter + this.xradius;
+        this.betweenXLower = this.xcenter - this.xradius;
+        this.betweenZUpper = this.zcenter + this.zradius;
+        this.betweenZLower = this.zcenter - this.zradius;
         this.WORLD = Bukkit.getWorld(worldZoneObj.getJSONObject("shape-data").getString("world"));
         
         //Settings
@@ -212,6 +240,8 @@ public class WorldZone {
         messages.put("enter-deny", this.enterDeny);
         messages.put("exit-deny", this.exitDeny);
         worldZone.put("messages", messages);
+        
+        worldZone.put("priority", priority);
 
         return worldZone;
         
@@ -234,10 +264,13 @@ public class WorldZone {
     }
     
     public void handlePlayer(Player player){
-        Vector vel = player.getVelocity();
-        Vector newVel = new Vector((-2.0)*vel.getX(), vel.getBlockY()+2, (-2.0)*vel.getBlockZ());
-        player.setVelocity(newVel);
-        
+//        Vector vel = player.getVelocity();
+//        Vector newVel = new Vector((-2.0)*vel.getX(), vel.getBlockY()+2, (-2.0)*vel.getBlockZ());
+//        player.setVelocity(newVel);
+        Location playerLocation = player.getLocation();
+        boolean inZone = isPlayerInZone(playerLocation.getBlockX(), playerLocation.getBlockZ());
+        boolean allowedInZone = isPlayerAllowedInZone(player);
+        boolean requiredInZone = isPlayerRequiredInZone(player);
     }
     
     /** Evaluates if a player is within the zone. This checks the super zone first, and if they are not within the super zone
@@ -249,10 +282,14 @@ public class WorldZone {
      * @return True if the player is within the zone, false if the player is not in the zone.
      */
     public boolean isPlayerInZone(int X, int Z) {
+        boolean betweenX = between(X, betweenXLower, betweenXUpper);
+        boolean betweenZ = between(Z, betweenZLower, betweenZUpper);
+        //If a square
         if (this.type.equals("square")) {
-            return between(X, xcenter-xradius, xcenter+xradius) && between(Z, zcenter-zradius, zcenter+zcenter);
-        } else if (between(X, xcenter-xradius, xcenter+xradius) && between(Z, zcenter-zradius, zcenter+zcenter)) {
-            return (((X-xcenter)^2 / (xradius)^2) + ((Z-zcenter)^2 / (zradius)^2)) <= 1;
+            return betweenX && betweenZ;
+        //If circle/elipse
+        } else if (betweenX && betweenZ) {
+            return (((X-xcenter)^2 / xradiusSqr) + ((Z-zcenter)^2 / zradiusSqr)) <= 1;
         } else {
             return false;
         }

@@ -16,6 +16,12 @@
  */
 package jawamaster.jawapermissions.worldzone;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import java.util.Collection;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+
 /**
  *
  * @author alexander
@@ -24,7 +30,14 @@ public class WorldZoneScanner implements Runnable{
 
     @Override
     public void run() {
+        Collection<Player> players = ImmutableList.copyOf(Bukkit.getServer().getOnlinePlayers());
+        ImmutableMap<String, WorldZone> zones = ImmutableMap.copyOf(ZoneHandler.getWorldZones());
         
+        for (Player player : players){
+            if (zones.containsKey(player.getWorld())) {
+                zones.get(player.getWorld()).handlePlayer(player);
+            }
+        }
     }
     
 }

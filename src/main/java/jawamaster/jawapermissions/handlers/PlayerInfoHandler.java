@@ -18,6 +18,7 @@
 package jawamaster.jawapermissions.handlers;
 
 import com.maxmind.geoip2.DatabaseReader;
+import com.maxmind.geoip2.exception.AddressNotFoundException;
 import com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.maxmind.geoip2.model.CityResponse;
 import java.io.File;
@@ -25,14 +26,12 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Queue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jawamaster.jawapermissions.JawaPermissions;
 import jawamaster.jawapermissions.commands.playerinfo.AltSearch;
 import net.jawasystems.jawacore.dataobjects.PlayerDataObject;
-import net.jawasystems.jawacore.debug.JawaPluginsCommand;
 import net.jawasystems.jawacore.handlers.ESHandler;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.BaseComponent;
@@ -46,6 +45,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 import org.elasticsearch.search.SearchHit;
 import org.json.JSONObject;
+import sun.jvm.hotspot.types.AddressField;
 
 /**
  *
@@ -182,11 +182,18 @@ public class PlayerInfoHandler {
             response = dbReader.city(InetAddress.getByName(ip));
             return response.getCity().getName() + ", " + response.getLeastSpecificSubdivision().getName() + ", " + response.getCountry().getName() ;
         } catch (UnknownHostException ex) {
-            Logger.getLogger(PlayerInfoHandler.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.WARNING, "ip: {0} could not be found do to an UnknownHostException", ip);
+            if (JawaPermissions.debug) {
+                LOGGER.log(Level.WARNING, null, ex);
+            }
+            return "Unknown";
         } catch (IOException | GeoIp2Exception ex) {
-            Logger.getLogger(PlayerInfoHandler.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        return "";
+            LOGGER.log(Level.WARNING, "ip: {0} could not be found do to an IOException ot GeoIp2Exception", ip);
+            if (JawaPermissions.debug) {
+                LOGGER.log(Level.WARNING, null, ex);
+            }
+            return "Unknown";
+        } 
         
     }
 

@@ -16,12 +16,8 @@
  */
 package jawamaster.jawapermissions.commands.playerinfo;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import jawamaster.jawapermissions.handlers.PlayerInfoHandler;
 import net.jawasystems.jawacore.dataobjects.PlayerDataObject;
-import net.jawasystems.jawacore.handlers.ESHandler;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
@@ -43,7 +39,7 @@ public class AltSearch extends Thread {
             
             if (requestObj != null){
                 PlayerDataObject pdo = (PlayerDataObject) requestObj.get("pdo");
-                JSONArray ar = pdo.getIPArray();
+                //JSONArray ar = pdo.getIPArray();
 //                ESHandler.runAltSearch(ar);
             }
             else { //Wait

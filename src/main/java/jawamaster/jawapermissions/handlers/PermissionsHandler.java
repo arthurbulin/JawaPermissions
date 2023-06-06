@@ -303,6 +303,7 @@ public class PermissionsHandler {
      * @return
      */
     public static boolean has(Player player, String perm) {
+        if (JawaPermissions.debug) System.out.println("Player class:" +player.getClass().getName());
         //This will deal with any null rank problems
         String playerRank = PlayerManager.getPlayerDataObject(player).getRank();
         //System.out.print(playerRank);

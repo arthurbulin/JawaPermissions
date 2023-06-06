@@ -18,6 +18,7 @@ package jawamaster.jawapermissions.handlers;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 import java.util.UUID;
 import net.jawasystems.jawacore.PlayerManager;
 import net.jawasystems.jawacore.dataobjects.PlayerDataObject;
@@ -41,13 +42,20 @@ public class BanHandler {
     
     /** Return a ban info for a specific ban.
      * @param commandSender
-     * @param ban
+     * @param banID
      * @param pdObject 
      */
-    public static void getBanInfo(CommandSender commandSender, String ban, PlayerDataObject pdObject){
-        JSONObject banData = pdObject.getBanEntry(ban);
+    public static void getBanInfo(CommandSender commandSender, String banID, PlayerDataObject pdObject){
+        JSONObject banData = pdObject.getBanEntryByID(banID);
         JSONArray message = new JSONArray();
-        message.put(ChatColor.GREEN + " > Ban information for " + pdObject.getFriendlyName() + ChatColor.GREEN + " on ban: " + ChatColor.BLUE + ban);
+        ComponentBuilder banHeader = new ComponentBuilder()
+                .append("> Ban information for ").color(ChatColor.GREEN)
+                .append(pdObject.getFriendlyName())
+                .append(" on ban: ").color(ChatColor.GREEN)
+                .append(banID).color(ChatColor.BLUE)
+                .event(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, banID))
+                .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Copy Ban ID")));
+        message.put(banHeader.create());
         
         BaseComponent[] reason = new ComponentBuilder("  > Reason: ").color(ChatColor.GREEN)
                         .append(banData.optString("reason", "WARNING: MISSING DATA"))
@@ -110,7 +118,7 @@ public class BanHandler {
         
         //Banned on
         ComponentBuilder bannedOn = new ComponentBuilder("  > Banned On: ").color(ChatColor.GREEN);
-        bannedOn.append(TimeParser.getHumanReadableDateTime(ban,1))
+        bannedOn.append(TimeParser.getHumanReadableDateTime(banData.getString("date"),1))
                     .color(ChatColor.BLUE);
         message.put(bannedOn.create());
         
@@ -129,7 +137,7 @@ public class BanHandler {
         ComponentBuilder console = new ComponentBuilder("  > Console Ban: ").color(ChatColor.GREEN)
                 .append(String.valueOf(banData.getBoolean("via-console"))).color(ChatColor.BLUE);
         
-        if (banData.keySet().contains("unbanned-via-console")) {
+        if (banData.has("unbanned-via-console")) {
             console.append(" Unbanned via console: ")
                         .color(ChatColor.GREEN)
                    .append(String.valueOf(banData.getBoolean("unbanned-via-console")))
@@ -138,11 +146,19 @@ public class BanHandler {
         message.put(console.create());
         
         //Unban Date
-        if (banData.keySet().contains("unbanned-on")) {
+        if (banData.has("unbanned-on")) {
             ComponentBuilder unban = new ComponentBuilder("  > Unbanned on: ").color(ChatColor.GREEN)
                     .append(TimeParser.getHumanReadableDateTime(banData.getString("unbanned-on"),1))
                     .color(ChatColor.BLUE);
             message.put(unban.create());
+        }
+        
+        //Unban reason
+        if (banData.has("unreason")) {
+            ComponentBuilder unreason = new ComponentBuilder("  > Unreason: ").color(ChatColor.GREEN)
+                    .append(banData.getString("unreason"))
+                    .color(ChatColor.WHITE);
+            message.put(unreason.create());
         }
         
         ComponentBuilder options = new ComponentBuilder("  > Options: ").color(ChatColor.GREEN);
@@ -150,8 +166,14 @@ public class BanHandler {
                 .color(ChatColor.BLUE)
                 .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Update Ban Reason")))
                 //.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Update Ban Reason").create()))
-                .event(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "Not Yet Implimented"));
-                
+                .event(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/ban update:"+banID + " " + pdObject.getName() + " " ));
+        
+        if (banData.getBoolean("active")) {
+            options.append("[Unban]").color(ChatColor.GOLD)
+                   .event(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/unban " + pdObject.getName() + " "))
+                   .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Unban Player")));
+        }
+        message.put(options.create());
 
         PlayerDataObject sender = PlayerManager.getPlayerDataObject((Player) commandSender);
         sender.sendMessage(message);
@@ -163,44 +185,47 @@ public class BanHandler {
      * @param pdObject 
      */
     public static void listBans(CommandSender commandSender, String player, PlayerDataObject pdObject){
-                
-                JSONArray message = new JSONArray();
-                JSONArray bans = pdObject.getBanData();
-                String latestBanDate = pdObject.getLatestBanDate();
-                //String[] message = new String[1 + bans.length()];
-                message.put(ChatColor.GREEN + "> Ban information for " + pdObject.getFriendlyName());
-                
-                BaseComponent[] latestBanData = new ComponentBuilder(" > ").color(ChatColor.GREEN)
-                        .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/baninfo info " + player + " " + latestBanDate))
-                        .append(latestBanDate)
-                            .color(ChatColor.RED)
-                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Latest Ban")))
-                        .append(": ")
-                            .color(ChatColor.GREEN)
-                        .append(pdObject.getLatestBanEntry().getString("reason")).color(ChatColor.WHITE)
-                            
-                        .create();
-                message.put(latestBanData);
-                
-                
-                for (Object ban : bans){
-                    if (!((JSONObject) ban).getString("date").equals(latestBanDate)) {
-                        ComponentBuilder banData = new ComponentBuilder(" > ")
-                                .color(ChatColor.GREEN)
-                        .append(((JSONObject) ban).getString("date"))
-                                .color(ChatColor.YELLOW)
-                        .append(": ")
-                            .color(ChatColor.GREEN)
-                        .append(((JSONObject) ban).getString("reason")).color(ChatColor.WHITE)
-                                .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/baninfo info " + player + " " + ban));
-                        BaseComponent[] bc = banData.create();
-                        message.put(bc);
-                    }
-                            
-                }
-                
-                PlayerDataObject sender = PlayerManager.getPlayerDataObject((Player) commandSender);
-                sender.sendMessage(message);
-                
+     
+        JSONArray message = new JSONArray();
+        Map<String, JSONObject> bans = pdObject.getBanData();
+        String latestBanID = pdObject.getLatestActiveBanID();
+        boolean isBanned = pdObject.isBanned();
+//        System.out.println(latestBanID);
+//        System.out.println(pdObject.getBanEntryByID(latestBanID));
+
+        //String[] message = new String[1 + bans.length()];
+        message.put(ChatColor.GREEN + "> Ban information for " + pdObject.getFriendlyName());
+        if (isBanned) {
+            BaseComponent[] latestBanData = new ComponentBuilder(" > ").color(ChatColor.GREEN)
+                    .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/baninfo info " + player + " " + latestBanID))
+                    .append(latestBanID).color(ChatColor.RED)
+                    .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Latest Ban")))
+                    .append(":").color(ChatColor.GREEN)
+                    .append(TimeParser.getHumanReadableDateTime(pdObject.getBanEntryByID(latestBanID).getString("date"), 1)).color(ChatColor.YELLOW)
+                    .append(": ").color(ChatColor.GREEN)
+                    .append(pdObject.getLatestActiveBanEntry().getString("reason")).color(ChatColor.WHITE)
+                    .create();
+            message.put(latestBanData);
+        }
+
+        for (String banID : bans.keySet()) {
+            if (isBanned && banID.equals(latestBanID)) {
+                continue;
+            }
+            ComponentBuilder banData = new ComponentBuilder(" > ").color(ChatColor.GREEN)
+                    .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/baninfo info " + player + " " + banID))
+                    .append(banID).color(ChatColor.RED)
+                    .append(":").color(ChatColor.GREEN)
+                    .append(TimeParser.getHumanReadableDateTime(bans.get(banID).getString("date"), 1)).color(ChatColor.YELLOW)
+                    .append(": ").color(ChatColor.GREEN)
+                    .append(bans.get(banID).getString("reason")).color(ChatColor.WHITE)
+                    ;
+            BaseComponent[] bc = banData.create();
+            message.put(bc);
+        }
+
+        PlayerDataObject sender = PlayerManager.getPlayerDataObject((Player) commandSender);
+        sender.sendMessage(message);
+
     }
 }

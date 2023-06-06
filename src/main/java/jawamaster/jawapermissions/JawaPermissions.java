@@ -56,15 +56,17 @@ public class JawaPermissions extends JavaPlugin {
     
     @Override
     public void onEnable(){
-        loadConfig();
-
         plugin = this;
+        
+        loadConfig();
         
         //Load permissions
         PermissionsHandler.load();
 
         //Load the auto elevate list
         AutoElevateHandler.getAutoElevateList();
+        
+        validateBanIndex();
         
         //Load GeoIP Database
         if (geoIPCheck) {
@@ -114,7 +116,9 @@ public class JawaPermissions extends JavaPlugin {
         
         newPlayerMessage = config.getString("new-player-message", "You have been installed!");
 
-        JawaCore.receiveConfigurations(this.getClass().getName(), config);
+        JawaCore.registerIndexLiteral("bans", config.getString("index-customization.bans", "bans"), JawaPermissions.plugin.getName());
+        
+        JawaCore.receiveConfigurations(this.getName(), config);
         //System.out.println(this.getClass().getName());
         if (debug){
             LOGGER.info("Debug is turned on! This is not recommended unless you are a dev or are tracking a problem!");
@@ -149,6 +153,21 @@ public class JawaPermissions extends JavaPlugin {
     
     public static boolean isGeoIPEnabled(){
         return geoIPCheck;
+    }
+
+    private boolean validateBanIndex() {
+        LOGGER.log(Level.INFO, "Requsting index validation from JawaCore for the bans index...");
+        if (!JawaCore.validateIndex("bans")){
+            LOGGER.log(Level.INFO, "Requesting JawaCore create the bans index...");
+            boolean created = JawaCore.createIndex("bans", null);
+            if (!created) {
+                LOGGER.log(Level.INFO, "Index returned non-createed. Attempting to revalidate with JawaCore...");
+                created = JawaCore.validateIndex("bans");
+            }
+            return created;
+        } else {
+            return true;
+        }
     }
     
 
