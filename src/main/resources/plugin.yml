@@ -7,7 +7,7 @@ api-version: 1.20
 commands:
   uuid:
     description: This command returns the UUID of a user.
-    usage: /uuid
+    usage: /uuid [<player>]
     permission: jawapermissions.getuuid
   setrank:
     description: This command will set the player rank.
