@@ -5,7 +5,6 @@
  */
 package jawamaster.jawapermissions.commands;
 
-import jawamaster.jawapermissions.JawaPermissions;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -19,8 +18,8 @@ public class testCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender commandSender, Command arg1, String arg2, String[] arg3) {
 
-        
-        System.out.println("playerRanks: " + JawaPermissions.playerRank);
+        //PlayerManager.getPlayer("bob").get
+        //Bukkit.getServer().getWorld("world").
         //System.out.println("immunitylevels; " + JawaPermissions.immunityLevels);
         
 //        JawaPermissions.plugin.getServer().getScheduler().runTaskAsynchronously(JawaPermissions.plugin, new Runnable() {

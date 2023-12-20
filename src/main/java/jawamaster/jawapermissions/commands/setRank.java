@@ -102,7 +102,7 @@ public class setRank implements CommandExecutor {
             adminData = PlayerManager.getPlayerDataObject((Player) commandSender);
         }
 
-        if (!PermissionsHandler.isImmune(adminData.getRank(), targetRank)){
+        if (PermissionsHandler.isImmune(adminData.getRank(), targetRank)){
             commandSender.sendMessage(ChatColor.RED + " > " + ChatColor.BLUE + targetData.getName() + ChatColor.RED + "Has immunity to your specified command.");
             return true;
         }

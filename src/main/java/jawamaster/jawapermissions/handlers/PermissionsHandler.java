@@ -33,36 +33,17 @@ import org.bukkit.entity.Player;
  */
 public class PermissionsHandler {
 
+    private static final Logger LOGGER = Logger.getLogger("JawaPermissions][PermissionsHandler");
     //New rank object method
-    private static Map<String, Rank> rankMap;
+    private static final Map<String, Rank> RANKMAP = new HashMap();
 
-    private final boolean loaded = false;
-    private final static String handlerSlug = "[PermissionsHandler] ";
-
-    /**
-     * PermissionHandler(JawaPermissions plugin) initializes the permissions
-     * handler.This handler will handle loading, reloading, removing, and
-     * permission checks for the plugin.
-     *
-     * @throws java.io.IOException
+    /** Loads the permissions.yml files for each world from the JawaPermissions/permissions
+     * folder and generates the needed rank objects. If the permissions files do not exists
+     * this will save the default file. 
      */
-    public PermissionsHandler() throws IOException {
-        PermissionsHandler.rankMap = new HashMap();
-        load();
-    }
-
-    /**
-     * Loads the permissions from yml files found in the ./permissions folder
-     * and converts them into a JSONObject.That JSONObject is then committed to
-     * JawaPermissions.worldPermissions<String,JSONObject>
-     * where String is the name of the minecraft world and JSONObject is the
-     * JSON generated from the yml file
-     *
-     * @throws java.io.FileNotFoundException *
-     */
-    public static void reload() throws FileNotFoundException, IOException {
+    public static void reload() {
         //load the player immunity. This will also be used to check for valid ranks
-        loadImmunity();
+//        loadImmunity();
 
         //Get the locations for the permissions files
         final File permFiles = new File(JawaPermissions.getPlugin().getDataFolder() + "/permissions");
@@ -72,11 +53,12 @@ public class PermissionsHandler {
 
         //File list of permissions files
         File[] fileList = permFiles.listFiles();
-
+        if (fileList.length == 0) JawaPermissions.getPlugin().saveResource("permissions/world.yml", false);
         if (JawaPermissions.debug) {
-            System.out.print(JawaPermissions.pluginSlug + handlerSlug + "Permissions are being checked in: " + permFiles);
+            LOGGER.log(Level.INFO, "Permissions are being checked in: {0}", permFiles);
         }
 
+        // TODO FIXME build in case insensativity
         //Iterate over filelist
         for (File f : fileList) {
             //Yaml yaml = new Yaml(); //Create Yaml object for permission retreival
@@ -88,22 +70,22 @@ public class PermissionsHandler {
             }
 
             if (JawaPermissions.debug) {
-                System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Loading permissions from file: " + f.getName());
-                System.out.println(JawaPermissions.pluginSlug + handlerSlug + "Current world name identified as: " + currentWorld);
+                LOGGER.log(Level.INFO, "Loading permissions from file: {0}", f.getName());
+                LOGGER.log(Level.INFO, "Current world name identified as: {0}", currentWorld);
             }
 
             //System.out.println(yaml.getKeys(true));
             // System.out.println(yaml.getKeys(false));
             for (String rank : yaml.getKeys(false)) {
 
-                if (!rankMap.containsKey(rank)) {
+                if (!RANKMAP.containsKey(rank)) {
                     //Create a new rank object and commit permissions to it
                     
                     int immunityDefault = 100;
                     if (rank.equalsIgnoreCase("owner")) {
                         immunityDefault = 0;
                     }//override and set the owner rank to 0 no matter what
-                        rankMap.put(rank, new Rank(
+                        RANKMAP.put(rank, new Rank(
                                 rank, 
                                 yaml.getConfigurationSection(rank).getInt("immunity", immunityDefault), 
                                 yaml.getConfigurationSection(rank).getString("color", "f"), 
@@ -111,7 +93,7 @@ public class PermissionsHandler {
                                 yaml.getConfigurationSection(rank).getString("requirements", "No Requirements have been provided for this rank")));
                 }
 
-                rankMap.get(rank).addWorld(currentWorld, yaml.getConfigurationSection(rank).getStringList("permissions"), yaml.getConfigurationSection(rank).getStringList("prohibitions"));
+                RANKMAP.get(rank).addWorld(currentWorld, yaml.getConfigurationSection(rank).getStringList("permissions"), yaml.getConfigurationSection(rank).getStringList("prohibitions"));
 
                 String inherits;
                 if (yaml.getConfigurationSection(rank).contains("inherits")) { //If rank has inheritence
@@ -121,9 +103,9 @@ public class PermissionsHandler {
                     while (true) { //iterate over until we hit a rank that doesnt have inherited perms
                         //Add permissions list from inherited rank
                         //System.out.println(JawaPermissions.pluginSlug + handlerSlug + " Inherit iteration for rank: " + rank + ". Rank is inheriting: " + inherits);
-                        rankMap.get(rank).addPermissions(currentWorld, yaml.getConfigurationSection(inherits).getStringList("permissions"));
+                        RANKMAP.get(rank).addPermissions(currentWorld, yaml.getConfigurationSection(inherits).getStringList("permissions"));
                         //Add prohibitions list from inherited rank
-                        rankMap.get(rank).addProhibitions(currentWorld, yaml.getConfigurationSection(inherits).getStringList("prohibitions"));
+                        RANKMAP.get(rank).addProhibitions(currentWorld, yaml.getConfigurationSection(inherits).getStringList("prohibitions"));
 
                         //Get the next inherited rank and repeat above
                         if (yaml.getConfigurationSection(inherits).contains("inherits")) {
@@ -137,28 +119,16 @@ public class PermissionsHandler {
             }
 
         }
-        
-//        for (String rank : rankMap.keySet()){
-//            System.out.println(rankMap.get(rank).getRankName()+":");
-//            System.out.print(rankMap.get(rank).getImmunity()+":");
-//            System.out.print(rankMap.get(rank));
-//        }
     }
 
-    /**
-     * Loads the permissions on server enable.
-     *
-     * @throws java.io.FileNotFoundException
+    /** Calls the reload() method at the time of enable.
      */
-    public void load() throws FileNotFoundException, IOException {
-        if (loaded) {
-            return;
-        }
+    public static void load() {
         reload();
 
     }
 
-    public static void loadImmunity() throws IOException {
+//    public static void loadImmunity() throws IOException {
 //        final File immunityFile = new File(JawaPermissions.getPlugin().getDataFolder() + "/immunity.yml");
 //        Yaml yaml = new Yaml(); //Create Yaml object for permission retreival
 //
@@ -191,10 +161,11 @@ public class PermissionsHandler {
 //        } catch (FileNotFoundException ex) {
 //            Logger.getLogger(PermissionsHandler.class.getName()).log(Level.SEVERE, null, ex);
 //        }
-    }
+//    }
 
+    
     /**
-     * Will return true if player can perform operation on target.Will return
+     * Will return true if player can perform operation on target. Will return
      * false if player CANNOT perform operation on target.This is backed by
      * immunityCheck(CommandSender commandSender, UUID target)
      *
@@ -239,10 +210,10 @@ public class PermissionsHandler {
     private static boolean onlineImmunityCheck(UUID commandSender, UUID target) {
 
         //int senderImmunity = JawaPermissions.immunityLevels.get(PlayerManager.getPlayerDataObject(commandSender).getRank());
-        int senderImmunity = rankMap.get(PlayerManager.getPlayerDataObject(commandSender).getRank()).getImmunity();
+        int senderImmunity = RANKMAP.get(PlayerManager.getPlayerDataObject(commandSender).getRank()).getImmunity();
         //System.out.println("immunity check: " + JawaPermissions.playerRank.get(target));
         //int targetImmunity = JawaPermissions.immunityLevels.get(PlayerManager.getPlayerDataObject(target).getRank());
-        int targetImmunity = rankMap.get(PlayerManager.getPlayerDataObject(target).getRank()).getImmunity();
+        int targetImmunity = RANKMAP.get(PlayerManager.getPlayerDataObject(target).getRank()).getImmunity();
         return senderImmunity < targetImmunity;
     }
 
@@ -260,24 +231,31 @@ public class PermissionsHandler {
      * @return
      */
     private static boolean offlineImmunityCheck(UUID commandSender, String targetRank) {
-        int senderImmunity = rankMap.get(PlayerManager.getPlayerDataObject(commandSender).getRank()).getImmunity();
-        int targetImmunity = rankMap.get(targetRank).getImmunity();
+        int senderImmunity = RANKMAP.get(PlayerManager.getPlayerDataObject(commandSender).getRank()).getImmunity();
+        int targetImmunity = RANKMAP.get(targetRank).getImmunity();
         return senderImmunity < targetImmunity;
     }
 
-    /**
-     * Returns true if target is immune to admin.
-     *
+    /** Returns true if target is immune to adminRank's action. Will return false if
+     * the target is NOT immune. This will examine the immunity that has been set in 
+     * the permissions yml file. Lower immunity is more powerful up to zero. If the
+     * immunity is less than it is true. Greater or equal returns false.
      * @param adminRank
      * @param targetRank
      * @return
      */
     public static boolean isImmune(String adminRank, String targetRank) {
-//        System.out.println(adminRank.toLowerCase());
-//        System.out.println(rankMap.get(adminRank.toLowerCase()).getImmunity());
-//        System.out.println(rankMap.get(targetRank));
-//        System.out.println(rankMap.get(targetRank).getImmunity());
-        return rankMap.get(adminRank.toLowerCase()).getImmunity() < rankMap.get(targetRank).getImmunity();
+        if (JawaPermissions.debug) 
+            LOGGER.log(Level.INFO, "isImmune({0},{1}) {2},{3}", new Object[]{adminRank, targetRank, RANKMAP.get(adminRank.toLowerCase()).getImmunity(), RANKMAP.get(targetRank.toLowerCase()).getImmunity()});
+        return RANKMAP.get(adminRank.toLowerCase()).getImmunity() >= RANKMAP.get(targetRank.toLowerCase()).getImmunity();
+    }
+    
+    /** Get the immunity integer for rank.
+     * @param rank The rank to get immunity for
+     * @return Integer for the rank's immunity.
+     */
+    public static int getImmunity(String rank){
+        return RANKMAP.get(rank).getImmunity();
     }
 
     /**
@@ -325,18 +303,19 @@ public class PermissionsHandler {
      * @return
      */
     public static boolean has(Player player, String perm) {
+        if (JawaPermissions.debug) System.out.println("Player class:" +player.getClass().getName());
         //This will deal with any null rank problems
         String playerRank = PlayerManager.getPlayerDataObject(player).getRank();
         //System.out.print(playerRank);
         if (playerRank == null) {
-            System.out.println("Something went wrong when checking permission: " + perm + " Assuming guest permissions for player: " + player.getName());
+            LOGGER.log(Level.SEVERE, "Something went wrong when checking permission: {0} Assuming guest permissions for player: {1}", new Object[]{perm, player.getName()});
             playerRank = "guest";
         }
 
-        boolean has = rankMap.get(playerRank).hasPermission(player.getWorld().getName(), perm);
+        boolean has = RANKMAP.get(playerRank).hasPermission(player.getWorld().getName(), perm);
 
         if (JawaPermissions.debug) {
-            Logger.getLogger(handlerSlug).log(Level.INFO, JawaPermissions.pluginSlug + handlerSlug + "Has call for player: {0} Rank: {1} RankObject: {2} Perm: {3}", new Object[]{player.getName(), rankMap.get(playerRank).getRankName(), perm, has});
+            LOGGER.log(Level.INFO, "Has call for player: {0} Rank: {1} RankObject: {2} Perm: {3}", new Object[]{player.getName(), RANKMAP.get(playerRank).getRankName(), perm, has});
         }
         //Bukkit.getServer().getPluginManager().getDefaultPermissions(true);
 
@@ -349,7 +328,7 @@ public class PermissionsHandler {
      * @return  
      */
     public static boolean rankExists(String rank) {
-        if (rankMap.containsKey(rank)) {
+        if (RANKMAP.containsKey(rank)) {
             return true;
         } else {
             return false;
@@ -360,11 +339,11 @@ public class PermissionsHandler {
      * @return 
      */
     public static Set rankList(){
-        return rankMap.keySet();
+        return RANKMAP.keySet();
     }
     
     public static List<String> getRankList(){
-        return new ArrayList<String>(rankMap.keySet());
+        return new ArrayList(RANKMAP.keySet());
     }
     
     /** Returns the ChatColor for the specified rank
@@ -375,7 +354,7 @@ public class PermissionsHandler {
         if (!rankExists(rank)){
             return ChatColor.WHITE;
         } else {
-            return rankMap.get(rank.toLowerCase()).getChatColor();
+            return RANKMAP.get(rank.toLowerCase()).getChatColor();
         }
     }
     
@@ -385,7 +364,7 @@ public class PermissionsHandler {
      * @return 
      */
     public static String getRankDescription(String rank) {
-        return rankMap.get(rank.toLowerCase()).getDescription();
+        return RANKMAP.get(rank.toLowerCase()).getDescription();
     }
     
     /** Returns a string for the rank's requirement. This returns a generic message
@@ -394,7 +373,7 @@ public class PermissionsHandler {
      * @return 
      */
     public static String getRankRequirements(String rank) {
-        return rankMap.get(rank.toLowerCase()).getRequirements();
+        return RANKMAP.get(rank.toLowerCase()).getRequirements();
     }
     
     /** Sends a rank description message to a player.
