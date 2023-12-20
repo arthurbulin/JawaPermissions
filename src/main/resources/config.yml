@@ -1,8 +1,5 @@
-servername: main
-default-world: world
 debug: false
 new-player-message: "You have been successfully Indexed"
-unsecured: true
 ban-appeal-suffix: "You can appeal at https://foxelbox.com"
 ban-reason-length: 3
 unban-reason-length: 3
