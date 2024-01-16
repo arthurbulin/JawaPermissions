@@ -23,6 +23,9 @@ import java.util.UUID;
 import net.jawasystems.jawacore.PlayerManager;
 import net.jawasystems.jawacore.dataobjects.PlayerDataObject;
 import net.jawasystems.jawacore.utils.TimeParser;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
@@ -48,14 +51,20 @@ public class BanHandler {
     public static void getBanInfo(CommandSender commandSender, String banID, PlayerDataObject pdObject){
         JSONObject banData = pdObject.getBanEntryByID(banID);
         JSONArray message = new JSONArray();
-        ComponentBuilder banHeader = new ComponentBuilder()
-                .append("> Ban information for ").color(ChatColor.GREEN)
+        TextComponent banHeader = Component.text("> Ban information for ").color(NamedTextColor.GREEN)
                 .append(pdObject.getFriendlyName())
-                .append(" on ban: ").color(ChatColor.GREEN)
-                .append(banID).color(ChatColor.BLUE)
-                .event(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, banID))
-                .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Copy Ban ID")));
-        message.put(banHeader.create());
+                .append(Component.text(" on ban: ").color(NamedTextColor.GREEN))
+                .append(Component.text(banID).color(NamedTextColor.BLUE))
+                .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(Component.text("Copy Ban ID")))
+                .clickEvent(net.kyori.adventure.text.event.ClickEvent.copyToClipboard(banID));
+//        ComponentBuilder banHeader = new ComponentBuilder()
+//                .append("> Ban information for ").color(ChatColor.GREEN)
+//                .append(pdObject.getFriendlyName())
+//                .append(" on ban: ").color(ChatColor.GREEN)
+//                .append(banID).color(ChatColor.BLUE)
+//                .event(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, banID))
+//                .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Copy Ban ID")));
+        message.put(banHeader);
         
         BaseComponent[] reason = new ComponentBuilder("  > Reason: ").color(ChatColor.GREEN)
                         .append(banData.optString("reason", "WARNING: MISSING DATA"))
@@ -76,45 +85,48 @@ public class BanHandler {
        
         //Banned by
         String adminUUID = banData.getString("banned-by");
-        String adminFriendlyName;
+//        String adminFriendlyName;
+        TextComponent adminFriendlyName = Component.text("  > Banned-by: ").color(NamedTextColor.GREEN);
         if ("00000000-0000-0000-0000-000000000000".equalsIgnoreCase(adminUUID)){
-            adminFriendlyName = "JawaCore System";
+            adminFriendlyName = adminFriendlyName.append(Component.text("JawaCore System").color(NamedTextColor.AQUA));
         } else {
             PlayerDataObject admin = PlayerManager.getPlayerDataObject(UUID.fromString(adminUUID));
             if (admin != null) {
-                adminFriendlyName = admin.getFriendlyName();
+                adminFriendlyName = adminFriendlyName.append(admin.getFriendlyName());
             } else {
-                adminFriendlyName = "WARNING: MISSING PLAYER ENTRY for " + adminUUID;
+                adminFriendlyName = adminFriendlyName.append(Component.text("WARNING: MISSING PLAYER ENTRY for " + adminUUID).color(NamedTextColor.RED));
             }
         }
         
-        ComponentBuilder by = new ComponentBuilder("  > Banned-by: ").color(ChatColor.GREEN)
-                .append(adminFriendlyName);
+//        ComponentBuilder by = new ComponentBuilder("  > Banned-by: ").color(ChatColor.GREEN)
+//                .append(adminFriendlyName);
         
         
         if (banData.keySet().contains("unbanned-by")) {
             String unadminUUID = banData.getString("unbanned-by");
-            String unadminFriendlyName;
+            TextComponent unadminFriendlyName = Component.text(" Unbanned-by: ").color(NamedTextColor.GREEN);
             if ("00000000-0000-0000-0000-000000000000".equalsIgnoreCase(unadminUUID)){
-                unadminFriendlyName = "JawaCore System";
+                unadminFriendlyName = unadminFriendlyName.append(Component.text("JawaCore System").color(NamedTextColor.AQUA));
             } else {
                 PlayerDataObject unadmin = PlayerManager.getPlayerDataObject(UUID.fromString(unadminUUID));
                 if (unadmin != null) {
-                    unadminFriendlyName = unadmin.getFriendlyName();
+                    unadminFriendlyName = unadminFriendlyName.append(unadmin.getFriendlyName());
                 } else {
-                    unadminFriendlyName = "WARNING: MISSING PLAYER ENTRY for " + unadminUUID;
+                    unadminFriendlyName = unadminFriendlyName.append(Component.text("WARNING: MISSING PLAYER ENTRY for " + unadminUUID).color(NamedTextColor.RED));
                 }
             }
+            adminFriendlyName = adminFriendlyName.append(unadminFriendlyName);
 //            String unbannedby;
 //            if (!banData.getString("banned-by").equals(banData.getString("unbanned-by"))) {
 //                unbannedby = PlayerManager.getPlayerDataObject(UUID.fromString(banData.getString("banned-by"))).getFriendlyName();
 //            } else {
 //                unbannedby = bannedBy.getFriendlyName();
 //            }
-            by.append(" Unbanned-by: ").color(ChatColor.GREEN)
-                    .append(unadminFriendlyName);
+//            by.append(" Unbanned-by: ").color(ChatColor.GREEN)
+//                    .append(unadminFriendlyName);
         }
-        message.put(by.create());
+        
+        message.put(adminFriendlyName);
         
         //Banned on
         ComponentBuilder bannedOn = new ComponentBuilder("  > Banned On: ").color(ChatColor.GREEN);
