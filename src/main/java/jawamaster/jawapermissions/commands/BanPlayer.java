@@ -7,11 +7,8 @@ package jawamaster.jawapermissions.commands;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -325,7 +322,7 @@ public class BanPlayer implements CommandExecutor {
         
         if (update && target.isBanIDValid(updateID)){
             target.updateBan(updateID, reason, admin.getUniqueID().toString());
-            commandSender.sendMessage(ChatColor.GREEN + "> " + target.getDisplayName() + ChatColor.RESET + ChatColor.GREEN + "'s ban information has been updated.");
+            commandSender.sendMessage(ChatColor.GREEN + "> " + target.getFriendlyName() + ChatColor.RESET + ChatColor.GREEN + "'s ban information has been updated.");
             LOGGER.log(Level.INFO, "{0}''s ban data has been updated by {1}", new Object[]{target.getName(), admin.getName()});
             return;
         } else if (update && !target.isBanIDValid(updateID)) {
@@ -347,14 +344,14 @@ public class BanPlayer implements CommandExecutor {
         //Tell who needs to be told
         for (Player ply : JawaPermissions.plugin.getServer().getOnlinePlayers()) {
             if (!silent || ply.hasPermission("jawachat.opchat")) {
-                ply.sendMessage(ChatColor.RED + "[Server] " + admin.getDisplayName() + ChatColor.RESET + ChatColor.GRAY + " has banned " + target.getDisplayName() + ChatColor.RESET + ChatColor.GRAY + " for: " + ChatColor.RED + reason);
+                ply.sendMessage(ChatColor.RED + "[Server] " + admin.getFriendlyName() + ChatColor.RESET + ChatColor.GRAY + " has banned " + target.getFriendlyName() + ChatColor.RESET + ChatColor.GRAY + " for: " + ChatColor.RED + reason);
             }
         }
 
         if (commandSender instanceof Player) {
-            ((Player) commandSender).sendMessage(ChatColor.GREEN + "> " + target.getDisplayName() + ChatColor.GREEN + " has been banned. Please ensure that you have entered a detailed reason. If not please repeat with the update option and detailed reason.");
+            ((Player) commandSender).sendMessage(ChatColor.GREEN + "> " + target.getFriendlyName() + ChatColor.GREEN + " has been banned. Please ensure that you have entered a detailed reason. If not please repeat with the update option and detailed reason.");
         } else {
-            System.out.println(target.getDisplayName() + " has been banned. Please ensure that you have entered a detailed reason. If not please repeat with the update option to update ban.");
+            System.out.println(target.getFriendlyName() + " has been banned. Please ensure that you have entered a detailed reason. If not please repeat with the update option to update ban.");
         } 
     }
 }
