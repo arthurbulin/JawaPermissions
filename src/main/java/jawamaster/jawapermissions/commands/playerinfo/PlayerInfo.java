@@ -23,9 +23,11 @@ import jawamaster.jawapermissions.handlers.PlayerInfoHandler;
 import net.jawasystems.jawacore.PlayerManager;
 import net.jawasystems.jawacore.dataobjects.PlayerDataObject;
 import net.jawasystems.jawacore.utils.TimeParser;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -128,35 +130,44 @@ public class PlayerInfo implements CommandExecutor {
             Bukkit.getServer().getScheduler().runTaskAsynchronously(JawaPermissions.getPlugin(), (BukkitTask t) -> {
                 JSONArray msg = new JSONArray();
                 //BaseComponent[][] msgBC = new BaseComponent[][rankData.length() + 1];
-                BaseComponent[] header = new ComponentBuilder("> Rank change history for ").color(ChatColor.GREEN)
-                        .append(target.getFriendlyName()).create();
+//                BaseComponent[] header = new ComponentBuilder("> Rank change history for ").color(ChatColor.GREEN)
+//                        .append(target.getFriendlyName()).create();
+                TextComponent header = Component.text("> Rank change history for ", NamedTextColor.GREEN)
+                        .append(target.getFriendlyName());
 
                 msg.put(header);
 
-                //header //FIXME there seems to be errors generating on lines 153 and 159 due to the lambda expression.
                 for(Object banObj : rankData){
                     JSONObject ban = (JSONObject) banObj;
-                    ComponentBuilder entry = new ComponentBuilder(" > ").color(ChatColor.GREEN)
-                            .append(ban.getString("from-rank"))
-                            .color(PermissionsHandler.getRankColor(ban.getString("from-rank")))
-                            .append(" -> ")
-                            .color(ChatColor.GREEN)
-                            .append(ban.getString("to-rank"))
-                            .color(PermissionsHandler.getRankColor(ban.getString("to-rank")))
-                            .append(" by ")
-                            .color(ChatColor.GREEN);
+                    TextComponent entry = Component.text().content(" > ").color(NamedTextColor.GREEN)
+                            .append(Component.text(ban.getString("from-rank"),PermissionsHandler.getRankColor(ban.getString("from-rank"))))
+                            .append(Component.text(" -> ", NamedTextColor.GREEN))
+                            .append(Component.text(ban.getString("to-rank"), PermissionsHandler.getRankColor(ban.getString("to-rank"))))
+                            .append(Component.text(" by ", NamedTextColor.GREEN)).build();
+//                    ComponentBuilder entry = new ComponentBuilder(" > ").color(ChatColor.GREEN)
+//                            .append(ban.getString("from-rank"))
+//                            .color(PermissionsHandler.getRankColor(ban.getString("from-rank")))
+//                            .append(" -> ")
+//                            .color(ChatColor.GREEN)
+//                            .append(ban.getString("to-rank"))
+//                            .color(PermissionsHandler.getRankColor(ban.getString("to-rank")))
+//                            .append(" by ")
+//                            .color(ChatColor.GREEN);
                     if (ban.getString("changed-by").equals("00000000-0000-0000-0000-000000000000")) {
-                        entry.append("Autoelevation")
-                                .color(ChatColor.BLUE);
+                        entry = entry.append(Component.text("Autoelevation",NamedTextColor.BLUE));
+//                                .color(ChatColor.BLUE);
                     } else {
                         PlayerDataObject admin = PlayerManager.getPlayerDataObject(UUID.fromString(ban.getString("changed-by")));
-                        entry.append(admin.getFriendlyName());
+                        //May be a problem since getFriendlyName contains chat color alt codes
+                        entry = entry.append(admin.getFriendlyName());
+//                        entry.append(admin.getFriendlyName());
                     }
-                    entry.append(" on ").color(ChatColor.GREEN)
-                            .append(TimeParser.getHumanReadableDateTime(ban.getString("date"), 1))
-                            .color(ChatColor.BLUE);
+                    entry = entry.append(Component.text(" on ", NamedTextColor.GREEN)).append(Component.text(TimeParser.getHumanReadableDateTime(ban.getString("date"), 1), NamedTextColor.BLUE));
+//                    entry.append(" on ").color(ChatColor.GREEN)
+//                            .append(TimeParser.getHumanReadableDateTime(ban.getString("date"), 1))
+//                            .color(ChatColor.BLUE);
                     
-                    msg.put(entry.create());
+                    msg.put(entry);
                 }
                 
                 
@@ -186,7 +197,7 @@ public class PlayerInfo implements CommandExecutor {
 //                });
 
                 for (Object line : msg) {
-                    sender.spigot().sendMessage((BaseComponent[]) line);
+                    sender.sendMessage((TextComponent) line);
                 }
             });
         }
