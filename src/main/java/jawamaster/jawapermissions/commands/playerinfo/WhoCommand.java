@@ -13,6 +13,9 @@ import java.util.logging.Logger;
 import jawamaster.jawapermissions.JawaPermissions;
 import net.jawasystems.jawacore.PlayerManager;
 import net.jawasystems.jawacore.dataobjects.PlayerDataObject;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
@@ -25,7 +28,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
 
 /**
  *
@@ -105,28 +107,40 @@ public class WhoCommand implements CommandExecutor {
     
     public void returnPlayerDataObject(PlayerDataObject target, CommandSender commandSender, String[] arg3) {
 
-        commandSender.sendMessage(ChatColor.GREEN + "> " + arg3[0] + "'s current player data");
+        //FIXME see if this needs to use the passed arg3 or if it needs to use target.getFriendlyName()
+        commandSender.sendMessage(Component.text("> " + arg3[0] + "'s current player data").color(NamedTextColor.GREEN));
 
-        String names = ChatColor.GREEN + " > User name: " + target.getRankColor() + target.getName();
-        if (!target.getNickName().equals("")) { //if user already has a nick then their friendly name will be the nick
-            names += ChatColor.GREEN + " Nickname: " + ChatColor.RESET + target.getFriendlyName();
+//        String names = ChatColor.GREEN + " > User name: " + target.getRankColor() + target.getName();
+        TextComponent nameInfo = Component.text(" > Username: ").color(NamedTextColor.GREEN).append(target.getColoredName());
+        if (!target.hasNickName()) { //if user already has a nick then their friendly name will be the nick
+//            names += ChatColor.GREEN + " Nickname: " + ChatColor.RESET + target.getFriendlyName();
+            nameInfo = nameInfo.append(Component.text(" Nickname: ").color(NamedTextColor.GREEN)).append(target.getFriendlyName());
         }
-        if (!target.getTag().equals("")) {
-            names += ChatColor.GREEN + " Tag: " + ChatColor.RESET + target.getFriendlyTag();
+        if (target.hasTag()) {
+//            names += ChatColor.GREEN + " Tag: " + ChatColor.RESET + target.getFriendlyTag();
+            nameInfo = nameInfo.append(Component.text(" Tag: ").color(NamedTextColor.GREEN)).append(target.getTagComponent());
         }
-        if (!target.getStar().equals("")) {
-            names += ChatColor.GREEN + " Star: " + ChatColor.RESET + target.getStar();
+        if (target.hasTag()) {
+//            names += ChatColor.GREEN + " Star: " + ChatColor.RESET + target.getStar();
+            nameInfo = nameInfo.append(Component.text(" Star: ").color(NamedTextColor.GREEN)).append(target.getStarComponent());
         }
-        commandSender.sendMessage(names);
+        commandSender.sendMessage(nameInfo);
 
-        BaseComponent[] rankIP = new ComponentBuilder(" > Rank: ").color(ChatColor.GREEN)
-                .append(target.getRank()).color(target.getRankColor())
-                .append(" Current IP: ").color(ChatColor.GREEN)
-                .append(target.getIP().replace("/", "")).color(ChatColor.WHITE)
-                .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/playerinfo " + target.getName() + " location"))
-                .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("GeoIP Location"))).create();
+        TextComponent rankIP = Component.text(" > Rank: ", NamedTextColor.GREEN)
+                .append(Component.text(target.getRank(), target.getRankColor()))
+                .append(Component.text(" Current IP: ", target.getRankColor()))
+                .append(Component.text(target.getIP().replace("/", ""), NamedTextColor.WHITE))
+                .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand("/playerinfo ".concat(target.getName()).concat(" location")))
+                .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(Component.text("GeoIP Location")));
+        
+//        BaseComponent[] rankIP = new ComponentBuilder(" > Rank: ").color(ChatColor.GREEN)
+//                .append(target.getRank()).color(target.getRankColor())
+//                .append(" Current IP: ").color(ChatColor.GREEN)
+//                .append(target.getIP().replace("/", "")).color(ChatColor.WHITE)
+//                .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/playerinfo " + target.getName() + " location"))
+//                .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("GeoIP Location"))).create();
 
-        commandSender.spigot().sendMessage(rankIP);
+        commandSender.sendMessage(rankIP);
 //                commandSender.sendMessage(ChatColor.GREEN + " > Rank: " + target.getRankColor() + target.getRank() +ChatColor.GREEN + " Current IP: " + ChatColor.WHITE + target.getIP());
 
         //TODO build this to be a clickable request for ban data
