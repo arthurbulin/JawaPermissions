@@ -30,6 +30,7 @@ import jawamaster.jawapermissions.JawaPermissions;
 import net.jawasystems.jawacore.PlayerManager;
 import net.jawasystems.jawacore.dataobjects.PlayerDataObject;
 import net.jawasystems.jawacore.utils.ListHandler;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
@@ -205,7 +206,9 @@ public class PlayerCommentCommand implements CommandExecutor {
                 JSONArray assembledPage = assembledPages.getJSONArray(page-1);
                 for (Object commentOBJ : (JSONArray) assembledPage) {
                     JSONObject comment = (JSONObject) commentOBJ;
-                    String adminName = PlayerManager.getPlayerDataObject(UUID.fromString(comment.getString("admin"))).getFriendlyName();
+//                    String adminName = PlayerManager.getPlayerDataObject(UUID.fromString(comment.getString("admin"))).getFriendlyName();
+                    //TODO FIXME Temporarily stripping formatting from adminName to support TextComponent to a Legacy string
+                    String adminName = PlayerManager.getPlayerDataObject(UUID.fromString(comment.getString("admin"))).getPlainNick();
                     LocalDateTime date = LocalDateTime.parse(comment.getString("date"), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
                     String datePrefix = date.format(DateTimeFormatter.ISO_LOCAL_DATE) + "@" + date.getHour() + ":" + date.getMinute();
                     int entry = iteration + (7 * (page-1));
