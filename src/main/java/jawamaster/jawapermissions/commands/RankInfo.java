@@ -17,7 +17,10 @@
 package jawamaster.jawapermissions.commands;
 
 import jawamaster.jawapermissions.handlers.PermissionsHandler;
-import net.md_5.bungee.api.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.event.ClickEvent;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -30,15 +33,16 @@ public class RankInfo implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender commandSender, Command command, String label, String[] args) {
-        String usage = ChatColor.GREEN + "> To get a rank's description/requirements run /rankinfo [description|requirements] <rank>";
-
+        //String usage = ChatColor. + "> To get a rank's description/requirements run /rankinfo [description|requirements] <rank>";
+        TextComponent usage = Component.text("> To get a rank's description/requirements run /rankinfo [description|requirements] <rank>", NamedTextColor.GREEN);
         // if the args are empty
         if (args == null || args.length == 0) {
-            String rankList = ChatColor.GREEN + " > The available ranks are: ";
+            TextComponent rankList = Component.text(" > The available ranks are: ", NamedTextColor.GREEN);
             for(String rank : PermissionsHandler.getRankList()){
-                rankList += PermissionsHandler.getRankColor(rank) + rank + ChatColor.WHITE + ", ";
+                rankList.append(Component.text(" > ".concat(rank.concat(" ")),PermissionsHandler.getRankColor(rank)).clickEvent(ClickEvent.runCommand("rankinfo description ".concat(rank))));
+                        //(ClickEvent.runCommand("/rankinfo description "+rank)));
             }
-            rankList = rankList.substring(0, rankList.length()-2);
+           
             commandSender.sendMessage(usage);
             commandSender.sendMessage(rankList);
         } 
@@ -46,7 +50,7 @@ public class RankInfo implements CommandExecutor {
         else if (args.length == 1) {
             //If the rank doesn't exit
             if (!PermissionsHandler.rankList().contains(args[0].toLowerCase())) {
-                commandSender.sendMessage(ChatColor.RED + "> Error: That rank does not exist.");
+                commandSender.sendMessage(Component.text("> Error: That rank does not exist.",NamedTextColor.RED));
                 return true;
             }
 
@@ -59,7 +63,7 @@ public class RankInfo implements CommandExecutor {
         else if (args.length >= 2) {
             //if the rank doesn't exit
             if (!PermissionsHandler.rankList().contains(args[1].toLowerCase())) {
-                commandSender.sendMessage(ChatColor.RED + "> Error: That rank does not exist.");
+                commandSender.sendMessage(Component.text("> Error: That rank does not exist.",NamedTextColor.RED));
                 return true;
             }
             
@@ -69,7 +73,7 @@ public class RankInfo implements CommandExecutor {
             } else if (args[0].equalsIgnoreCase("requirements")) {
                 PermissionsHandler.sendRequirements(commandSender, args[1]);
             } else {
-                commandSender.sendMessage(ChatColor.RED + "> Error: " + args[0] + " is not a valid argument.");
+                commandSender.sendMessage(Component.text("> Error: " + args[0] + " is not a valid argument.",NamedTextColor.RED));
                 commandSender.sendMessage(usage);
             }
         }
