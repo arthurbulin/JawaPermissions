@@ -18,7 +18,6 @@
 package jawamaster.jawapermissions.handlers;
 
 import com.maxmind.geoip2.DatabaseReader;
-import com.maxmind.geoip2.exception.AddressNotFoundException;
 import com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.maxmind.geoip2.model.CityResponse;
 import java.io.File;
@@ -33,6 +32,9 @@ import jawamaster.jawapermissions.JawaPermissions;
 import jawamaster.jawapermissions.commands.playerinfo.AltSearch;
 import net.jawasystems.jawacore.dataobjects.PlayerDataObject;
 import net.jawasystems.jawacore.handlers.ESHandler;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
@@ -45,7 +47,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 import org.elasticsearch.search.SearchHit;
 import org.json.JSONObject;
-import sun.jvm.hotspot.types.AddressField;
 
 /**
  *
@@ -101,18 +102,26 @@ public class PlayerInfoHandler {
                     for (SearchHit hit : hits) {
                         if (!hit.getId().equals(target.getUniqueID().toString())) {
                             JSONObject hitMap = new JSONObject(hit.getSourceAsMap());
-                            BaseComponent[] altInfo = new ComponentBuilder(ChatColor.GREEN + " > ")
-                                    .append(hitMap.getString("name")).color(PermissionsHandler.getRankColor(hitMap.getString("rank")))
-                                    .append(", with rank: ").color(ChatColor.GREEN)
-                                    .append(hitMap.getString("rank")).color(PermissionsHandler.getRankColor(hitMap.getString("rank")))
-                                    .reset()
-                                    .append(" [Who is]")
-                                    .color(ChatColor.BLUE)
-                                    .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Who lookup")))
-                                    .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/who " + hitMap.getString("name")))
-                                    .create();
+                            TextComponent altInfo = Component.text(" > ", NamedTextColor.GREEN)
+                                    .append(Component.text(hitMap.getString("name"), PermissionsHandler.getRankColor(hitMap.getString("rank"))))
+                                    .append(Component.text(", with rank: ", NamedTextColor.GREEN))
+                                    .append(Component.text(hitMap.getString("rank"), PermissionsHandler.getRankColor(hitMap.getString("rank"))))
+                                    .append(Component.text(" [Who is]",NamedTextColor.BLUE))
+                                    .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(Component.text("Who lookup")))
+                                    .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand("/who " + hitMap.getString("name")));
+//                            
+//                            BaseComponent[] altInfo = new ComponentBuilder(ChatColor.GREEN + " > ")
+//                                    .append(hitMap.getString("name")).color(PermissionsHandler.getRankColor(hitMap.getString("rank")))
+//                                    .append(", with rank: ").color(ChatColor.GREEN)
+//                                    .append(hitMap.getString("rank")).color(PermissionsHandler.getRankColor(hitMap.getString("rank")))
+//                                    .reset()
+//                                    .append(" [Who is]")
+//                                    .color(ChatColor.BLUE)
+//                                    .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Who lookup")))
+//                                    .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/who " + hitMap.getString("name")))
+//                                    .create();
 
-                            sender.spigot().sendMessage(altInfo);
+                            sender.sendMessage(altInfo);
                         }
                     }
                 });

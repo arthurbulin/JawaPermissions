@@ -36,6 +36,7 @@ public class WorldZoneScanner implements Runnable{
         for (Player player : players){
             if (zones.containsKey(player.getWorld())) {
                 zones.get(player.getWorld()).handlePlayer(player);
+            } else {
             }
         }
     }

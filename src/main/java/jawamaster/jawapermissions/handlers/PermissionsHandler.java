@@ -6,8 +6,6 @@
 package jawamaster.jawapermissions.handlers;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +17,7 @@ import java.util.logging.Logger;
 import jawamaster.jawapermissions.JawaPermissions;
 import jawamaster.jawapermissions.Rank;
 import net.jawasystems.jawacore.PlayerManager;
+import net.kyori.adventure.text.format.TextColor;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.command.BlockCommandSender;
 import org.bukkit.command.CommandSender;
@@ -36,6 +35,7 @@ public class PermissionsHandler {
     private static final Logger LOGGER = Logger.getLogger("JawaPermissions][PermissionsHandler");
     //New rank object method
     private static final Map<String, Rank> RANKMAP = new HashMap();
+    private static final String DEFAULT_RANK_COLOR = "#ffffff";
 
     /** Loads the permissions.yml files for each world from the JawaPermissions/permissions
      * folder and generates the needed rank objects. If the permissions files do not exists
@@ -74,8 +74,6 @@ public class PermissionsHandler {
                 LOGGER.log(Level.INFO, "Current world name identified as: {0}", currentWorld);
             }
 
-            //System.out.println(yaml.getKeys(true));
-            // System.out.println(yaml.getKeys(false));
             for (String rank : yaml.getKeys(false)) {
 
                 if (!RANKMAP.containsKey(rank)) {
@@ -85,10 +83,12 @@ public class PermissionsHandler {
                     if (rank.equalsIgnoreCase("owner")) {
                         immunityDefault = 0;
                     }//override and set the owner rank to 0 no matter what
+                        LOGGER.log(Level.INFO, "Creating Rank: {0} with immunity: {1} color: {2} description: {3} requirements: {4}", new Object[]{rank, yaml.getConfigurationSection(rank).getInt("immunity", immunityDefault), yaml.getConfigurationSection(rank).getString("color", "#ffffff"), yaml.getConfigurationSection(rank).getString("description", "No Description has been provided for this rank"), yaml.getConfigurationSection(rank).getString("requirements", "No Requirements have been provided for this rank")});
+                        
                         RANKMAP.put(rank, new Rank(
                                 rank, 
                                 yaml.getConfigurationSection(rank).getInt("immunity", immunityDefault), 
-                                yaml.getConfigurationSection(rank).getString("color", "f"), 
+                                yaml.getConfigurationSection(rank).getString("color", DEFAULT_RANK_COLOR), 
                                 yaml.getConfigurationSection(rank).getString("description", "No Description has been provided for this rank"),
                                 yaml.getConfigurationSection(rank).getString("requirements", "No Requirements have been provided for this rank")));
                 }
@@ -350,9 +350,9 @@ public class PermissionsHandler {
      * @param rank
      * @return 
      */
-    public static ChatColor getRankColor(String rank){
+    public static TextColor getRankColor(String rank){
         if (!rankExists(rank)){
-            return ChatColor.WHITE;
+            return TextColor.fromCSSHexString("#ffffff");
         } else {
             return RANKMAP.get(rank.toLowerCase()).getChatColor();
         }
@@ -392,5 +392,12 @@ public class PermissionsHandler {
     public static void sendRequirements(CommandSender commandSender, String rank) {
         commandSender.sendMessage(ChatColor.GREEN + "> Rank requirements for " + PermissionsHandler.getRankColor(rank) + rank.toLowerCase());
         commandSender.sendMessage(ChatColor.GREEN + ">" + ChatColor.translateAlternateColorCodes('&', PermissionsHandler.getRankRequirements(rank)));
+    }
+    
+    /** Sets the level of the PermissionsHandler logger.
+     * @param level 
+     */
+    public static void setLogLevel(Level level) {
+        LOGGER.setLevel(level);
     }
 }

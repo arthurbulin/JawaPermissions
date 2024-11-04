@@ -60,8 +60,11 @@ public class JawaPermissions extends JavaPlugin {
         
         loadConfig();
         
+        PermissionsHandler.setLogLevel(Level.FINEST);
+        
         //Load permissions
         PermissionsHandler.load();
+        
 
         //Load the auto elevate list
         AutoElevateHandler.getAutoElevateList();
@@ -121,6 +124,7 @@ public class JawaPermissions extends JavaPlugin {
         JawaCore.receiveConfigurations(this.getName(), config);
         //System.out.println(this.getClass().getName());
         if (debug){
+            LOGGER.setLevel(Level.FINEST);
             LOGGER.info("Debug is turned on! This is not recommended unless you are a dev or are tracking a problem!");
             LOGGER.info("If you are experiencing problems in a clean run environment please contact the dev on github.");
             LOGGER.info("If you are not running in a clean environment (just Jawa plugins) then please do not report your issue to the dev at this time.");

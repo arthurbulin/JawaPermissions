@@ -271,6 +271,12 @@ public class WorldZone {
         boolean inZone = isPlayerInZone(playerLocation.getBlockX(), playerLocation.getBlockZ());
         boolean allowedInZone = isPlayerAllowedInZone(player);
         boolean requiredInZone = isPlayerRequiredInZone(player);
+        //Evaluate if player is allowed in zone
+            //If yes do nothing
+            //If no, evict them
+        //Evaluate if player required to be in this zone
+            //If yes, reverse evict them
+            //If no, allow them to exit
     }
     
     /** Evaluates if a player is within the zone. This checks the super zone first, and if they are not within the super zone

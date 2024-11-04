@@ -10,17 +10,21 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import net.md_5.bungee.api.ChatColor;
+import java.util.logging.Logger;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 
 
-/**
- *
+/** This object houses all configuration data and permissions/prohibitions for a Rank object.
+ * 
  * @author Arthur Bulin
  */
 public class Rank {
+    private static final Logger LOGGER = Logger.getLogger("JawaPermissions][Rank");
+    
     private final String rankName;
     private final int immunity;
-    private final ChatColor color;
+    private final TextColor color;
     private final String description;
     private final String requirements;
     
@@ -28,14 +32,14 @@ public class Rank {
     private final Map<String, Set<String>> permissions;
     private final Map<String, Set<String>> prohibitions;
     
-//    public Rank (String rankName, int immunity){
-//        this.rankName = rankName;
-//        this.immunity = immunity;
-//        this.permissions = new HashMap();
-//        this.prohibitions = new HashMap();
-//        this.color = ChatColor.GRAY;
-//    }
-    
+    /** 
+     * Instantiate a Rank Object.
+     * @param rankName String rank name. Case, while stored, is ignored for matching purposes
+     * @param immunity The integer value of immunity
+     * @param color A string representation of the rank's color code. This will accept single digit Minecraft color codes but with conversion to the adventure API this will also accept colors in CSS rgb (#rrggbb)
+     * @param description
+     * @param requirements 
+     */
     public Rank (String rankName, int immunity, String color, String description, String requirements) {
         this.rankName = rankName;
         this.immunity = immunity;
@@ -43,7 +47,13 @@ public class Rank {
         this.requirements = requirements;
         this.permissions = new HashMap();
         this.prohibitions = new HashMap();
-        this.color = ChatColor.getByChar(color.charAt(0));
+        if (color.length() == 1) {
+            this.color = NamedTextColor.NAMES.value(color);
+        } else if (color.length() == 7 && "#".equals(color.charAt(0))) {
+            this.color = TextColor.fromCSSHexString(color);
+        } else {
+            this.color = TextColor.fromCSSHexString("#ffffff");
+        }
     }
    
     //Add data methods
@@ -153,7 +163,7 @@ public class Rank {
         return this.immunity;
     }
     
-    public ChatColor getChatColor(){
+    public TextColor getChatColor(){
         return this.color;
     }
     
